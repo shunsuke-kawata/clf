@@ -35,7 +35,7 @@ async function verify(signed: string, secret: string): Promise<boolean> {
   return diff === 0;
 }
 
-export default async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const secret = process.env.SESSION_SECRET ?? "";
   const token = req.cookies.get(COOKIE_NAME)?.value ?? "";
   const authenticated = secret ? await verify(token, secret) : false;
