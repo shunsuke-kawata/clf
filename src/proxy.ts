@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 const COOKIE_NAME = "clf_session";
 const encoder = new TextEncoder();
 
-
 async function hmacHex(value: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
