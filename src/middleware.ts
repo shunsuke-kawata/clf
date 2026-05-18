@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 const COOKIE_NAME = "clf_session";
 const encoder = new TextEncoder();
 
-
 async function hmacHex(value: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -36,7 +35,7 @@ async function verify(signed: string, secret: string): Promise<boolean> {
   return diff === 0;
 }
 
-export async function proxy(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
   const secret = process.env.SESSION_SECRET ?? "";
   const token = req.cookies.get(COOKIE_NAME)?.value ?? "";
   const authenticated = secret ? await verify(token, secret) : false;
