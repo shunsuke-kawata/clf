@@ -1,0 +1,129 @@
+# CLF (Coin Locker Finder)
+
+自分や身近な人が「次回また使いたいコインロッカー」を記録するプライベートメモツール。パブリックサービスではない。
+
+## 技術スタック
+
+| 用途 | 技術 |
+|------|------|
+| フレームワーク | Next.js 16 (App Router) |
+| 言語 | TypeScript（`any`禁止、`unknown`を使う） |
+| スタイル | Tailwind CSS v4 + shadcn/ui |
+| 地図 | Leaflet + react-leaflet（SSR無効） |
+| DB / Storage | Supabase（PostgreSQL + Storage） |
+| バリデーション | Zod + react-hook-form + @hookform/resolvers |
+| 会場検索 | Nominatim（OpenStreetMap）- 無料・APIキー不要 |
+| デプロイ | Vercel（mainブランチ自動デプロイ） |
+| パッケージ管理 | pnpm |
+
+## ディレクトリ構成
+
+```
+src/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx                    # / 地図メイン画面
+│   ├── login/page.tsx              # パスワード入力
+│   ├── lockers/[id]/page.tsx       # ロッカー詳細
+│   ├── admin/
+│   │   ├── new/page.tsx            # 新規投稿フォーム
+│   │   └── [id]/edit/page.tsx      # 編集フォーム
+│   └── api/
+│       ├── auth/login/route.ts
+│       ├── auth/logout/route.ts
+│       ├── geocode/route.ts        # Nominatim プロキシ
+│       ├── lockers/route.ts        # GET・POST
+│       ├── lockers/[id]/route.ts   # GET・PUT・DELETE
+│       └── photos/route.ts         # POST（アップロード）
+├── components/
+│   ├── map/
+│   │   ├── MapView.tsx             # Leaflet 本体（dynamic import）
+│   │   ├── LockerMarker.tsx
+│   │   ├── MapClickHandler.tsx
+│   │   └── VenueSearchBar.tsx      # 会場名検索バー
+│   ├── locker/
+│   │   ├── LockerCard.tsx
+│   │   ├── PhotoCarousel.tsx
+│   │   └── PricingTable.tsx
+│   └── form/
+│       ├── LockerForm.tsx
+│       ├── PricingEditor.tsx
+│       └── PhotoUploader.tsx
+├── lib/
+│   ├── auth.ts                     # Cookie署名・検証・パスワード照合
+│   ├── supabase/
+│   │   ├── client.ts               # anon key（ブラウザ用）
+│   │   └── server.ts               # service_role key（API Route用）
+│   ├── schemas/locker.ts           # Zod スキーマ
+│   └── utils/photo.ts              # Storage URL 生成
+├── hooks/
+│   ├── useLockers.ts
+│   └── useGeolocation.ts
+└── middleware.ts                   # 認証ミドルウェア
+```
+
+## 環境変数
+
+`.env.local` に設定。
+
+| 変数名 | 内容 |
+|--------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | SupabaseプロジェクトURL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon publicキー |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_roleキー（API Routeのみ使用） |
+| `APP_PASSWORD` | 投稿・編集に必要なパスワード |
+| `SESSION_SECRET` | Cookie署名用ランダム文字列（32文字以上） |
+
+## 認証方針
+
+JWT・DB不使用。**Cookie + HMAC-SHA256署名**のみ。
+
+- 閲覧（`GET /api/lockers/*`、`/`、`/lockers/*`）: 誰でもOK
+- 投稿・編集・削除（`/admin/*`、書き込み系API）: パスワード認証済みのみ
+
+## Supabaseスキーマ
+
+```sql
+CREATE TABLE lockers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  note TEXT,
+  pricing JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE locker_photos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  locker_id UUID NOT NULL REFERENCES lockers(id) ON DELETE CASCADE,
+  storage_key TEXT NOT NULL,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+## 会場名検索
+
+Nominatim API（無料・APIキー不要）を `/api/geocode` 経由で呼び出し、緯度経度を取得して地図を `flyTo` で移動させる。DBテーブル不要。
+
+## 開発フロー
+
+- ブランチ: `main` / `develop` / `feat/issue{番号}`
+- 作業開始前に GitHub Issue と Notion タスクを作成する
+- リポジトリ: https://github.com/shunsuke-kawata/clf
+
+## コマンド
+
+```bash
+pnpm dev      # 開発サーバー起動
+pnpm build    # ビルド
+```
+
+## 注意事項
+
+- `lib/supabase/server.ts` はサーバー専用（service_role key）。クライアントからimportしない
+- Leafletは `dynamic` + `ssr: false` で読み込む（`window is not defined` エラー回避）
+- スマホメインなのでタップ領域は44px以上、地図には `h-dvh` を使う
+- ロードマップは `ROADMAP.md` を参照
