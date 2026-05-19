@@ -36,7 +36,7 @@ export default async function LockerDetailPage({ params }: Props) {
         >
           ←
         </Link>
-        <h1 className="text-base font-semibold truncate">{locker.name}</h1>
+        <h1 className="text-base font-semibold truncate">{locker.name || "名称なし"}</h1>
         <Link
           href={`/admin/${locker.id}/edit`}
           className="ml-auto flex items-center justify-center w-11 h-11 -mr-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"

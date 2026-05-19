@@ -147,10 +147,10 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 w-full">
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">場所の名称 *</label>
+          <label className="text-sm font-medium">場所の名称</label>
           <input
             {...register("name")}
-            placeholder="例: 渋谷駅東口コインロッカー"
+            placeholder="例: 渋谷駅東口コインロッカー（任意）"
             className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
           />
           {errors.name && (

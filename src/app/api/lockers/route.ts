@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("lockers")
-    .insert(parsed.data)
+    .insert({ ...parsed.data, name: parsed.data.name || null })
     .select()
     .single();
 
