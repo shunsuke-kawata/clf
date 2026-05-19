@@ -24,7 +24,7 @@ export function PricingEditor() {
       <label className="text-sm font-medium">料金</label>
 
       {pricing.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {pricing.map((price) => (
             <span
               key={price}
@@ -46,37 +46,54 @@ export function PricingEditor() {
 
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(true)}
         className="flex items-center justify-between w-full px-4 py-3 rounded-lg border border-input bg-background text-sm text-left min-h-[44px]"
       >
         <span className={pricing.length > 0 ? "text-foreground" : "text-muted-foreground"}>
           {pricing.length > 0 ? `${pricing.length}件選択中` : "料金を選択"}
         </span>
-        <span
-          className={`text-muted-foreground inline-block transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        >
-          ▾
-        </span>
+        <span className="text-muted-foreground">▾</span>
       </button>
 
       {open && (
-        <div className="rounded-lg border border-input overflow-hidden">
-          {PRICE_OPTIONS.map((price, i) => (
-            <label
-              key={price}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent active:bg-accent ${
-                i < PRICE_OPTIONS.length - 1 ? "border-b border-border" : ""
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={pricing.includes(price)}
-                onChange={() => togglePrice(price)}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">¥{price.toLocaleString()}</span>
-            </label>
-          ))}
+        <div
+          className="fixed inset-0 z-[900] flex items-end"
+          onClick={() => setOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full bg-background rounded-t-2xl shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h2 className="font-semibold text-base">料金を選択</h2>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-sm font-medium text-primary min-h-[44px] min-w-[44px] flex items-center justify-end"
+              >
+                完了
+              </button>
+            </div>
+            <div className="overflow-y-auto" style={{ maxHeight: "60dvh" }}>
+              {PRICE_OPTIONS.map((price, i) => (
+                <label
+                  key={price}
+                  className={`flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-accent active:bg-accent ${
+                    i < PRICE_OPTIONS.length - 1 ? "border-b border-border" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={pricing.includes(price)}
+                    onChange={() => togglePrice(price)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">¥{price.toLocaleString()}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

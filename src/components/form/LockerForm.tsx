@@ -38,7 +38,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [geoError, setGeoError] = useState("");
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapKey] = useState(() => Date.now());
+  const [mapKey, setMapKey] = useState(0);
 
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
@@ -57,6 +57,9 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const lng = watch("lng");
 
   useEffect(() => {
+    // useStateの初期値はルーターキャッシュで保持されるため、
+    // マウントのたびにkeyを更新してMapPickerを強制リマウントする
+    setMapKey(Date.now());
     if (mode === "create") fetchCurrentLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
