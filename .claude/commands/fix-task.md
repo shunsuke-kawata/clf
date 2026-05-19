@@ -23,15 +23,16 @@
 - label: `bug`（存在しない場合は省略）
 - body: 入力内容の詳細説明（原因・影響・修正方針を含める）。末尾に `Notion: {作成した Notion ページの URL}` を追記する
 
-### ステップ3: 現在のブランチを退避して fix ブランチを作成する
+### ステップ3: fix ブランチを作成・切り替える
 
 **重要: ブランチ作成は必ずステップ1・2の Issue 作成後に行うこと。**
 
-現在のブランチを確認し、fix ブランチを作成・切り替えてください。
+必ず develop に切り替えてから最新を取得し、ブランチを作成する。
 
 ```bash
-git stash      # 作業中の変更があれば退避
-git checkout main
+git stash          # 作業中の変更があれば退避
+git checkout develop
+git pull origin develop
 git checkout -b fix/issue{Issue番号}
 ```
 

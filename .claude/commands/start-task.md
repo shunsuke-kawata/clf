@@ -31,14 +31,16 @@ gh issue create --repo shunsuke-kawata/clf \
 
 **重要: ブランチ作成は必ずステップ1・2の Issue 作成後に行うこと。**
 
-CLF のブランチ命名規則に従ってブランチを作成し、切り替えてください。
+必ず develop に切り替えてから最新を取得し、ブランチを作成する。
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feat/issue{番号}
+```
 
 - 形式: `feat/issue{Issue番号}`
 - 例: Issue 番号が 3 なら `feat/issue3`
-
-```bash
-git checkout -b feat/issue{番号}
-```
 
 ## 完了報告
 
