@@ -24,72 +24,82 @@ export default async function LockerDetailPage({ params }: Props) {
   if (!locker) notFound();
 
   const supabaseUrl = process.env.SUPABASE_URL ?? "";
-  const photos = locker.locker_photos ?? [];
+  const photos = (locker.locker_photos ?? []).sort((a, b) => a.order_index - b.order_index);
 
   return (
-    <main className="max-w-lg mx-auto px-4 py-6 pb-24">
-      <Link href="/" className="text-sm text-muted-foreground mb-4 inline-block">
-        ← 地図に戻る
-      </Link>
+    <>
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
+        <Link
+          href="/"
+          className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          aria-label="地図に戻る"
+        >
+          ←
+        </Link>
+        <h1 className="text-base font-semibold truncate">{locker.name}</h1>
+        <Link
+          href={`/admin/${locker.id}/edit`}
+          className="ml-auto flex items-center justify-center w-11 h-11 -mr-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          aria-label="編集"
+        >
+          ✏️
+        </Link>
+      </header>
 
-      <h1 className="text-2xl font-bold mb-4">{locker.name}</h1>
-
-      {photos.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-          {photos
-            .sort((a, b) => a.order_index - b.order_index)
-            .map((photo) => (
+      <main className="max-w-lg mx-auto pb-10">
+        {photos.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto px-4 pt-4 pb-2 snap-x snap-mandatory">
+            {photos.map((photo) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={photo.id}
                 src={getPhotoUrl(supabaseUrl, photo.storage_key)}
                 alt="ロッカー写真"
-                className="h-48 w-auto rounded-lg object-cover flex-shrink-0"
+                className="h-52 w-auto rounded-xl object-cover flex-shrink-0 snap-start"
               />
             ))}
+          </div>
+        )}
+
+        <div className="px-4 pt-4 flex flex-col gap-5">
+          {locker.pricing.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">料金</h2>
+              <div className="rounded-xl border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted text-muted-foreground text-xs">
+                      <th className="text-left px-4 py-2.5">サイズ</th>
+                      <th className="text-left px-4 py-2.5">時間</th>
+                      <th className="text-right px-4 py-2.5">料金</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {locker.pricing.map((item, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-4 py-3">{item.size}</td>
+                        <td className="px-4 py-3">{item.duration}</td>
+                        <td className="px-4 py-3 text-right font-medium">¥{item.price.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {locker.note && (
+            <section>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">メモ</h2>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{locker.note}</p>
+            </section>
+          )}
+
+          {locker.pricing.length === 0 && !locker.note && photos.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">情報がありません</p>
+          )}
         </div>
-      )}
-
-      {locker.pricing.length > 0 && (
-        <section className="mb-4">
-          <h2 className="text-base font-semibold mb-2">料金</h2>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-muted text-muted-foreground">
-                <th className="text-left px-3 py-2">サイズ</th>
-                <th className="text-left px-3 py-2">時間</th>
-                <th className="text-right px-3 py-2">料金</th>
-              </tr>
-            </thead>
-            <tbody>
-              {locker.pricing.map((item, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="px-3 py-2">{item.size}</td>
-                  <td className="px-3 py-2">{item.duration}</td>
-                  <td className="px-3 py-2 text-right">¥{item.price}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {locker.note && (
-        <section className="mb-4">
-          <h2 className="text-base font-semibold mb-2">メモ</h2>
-          <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-            {locker.note}
-          </p>
-        </section>
-      )}
-
-      <Link
-        href={`/admin/${locker.id}/edit`}
-        className="fixed bottom-6 right-4 flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-lg text-xl"
-        aria-label="編集"
-      >
-        ✏️
-      </Link>
-    </main>
+      </main>
+    </>
   );
 }

@@ -41,20 +41,26 @@ export function PhotoUploader({ lockerId, onUpload }: Props) {
     }
 
     const photo: UploadedPhoto = await res.json();
-    setCount((c) => c + 1);
+    const newCount = count + 1;
+    setCount(newCount);
     onUpload(photo);
 
-    // 同じファイルを再選択できるようにリセット
     if (inputRef.current) inputRef.current.value = "";
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium">写真</label>
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium">写真</label>
+        {count > 0 && (
+          <span className="text-xs text-muted-foreground">{count}枚追加済み</span>
+        )}
+      </div>
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={handleChange}
       />
@@ -65,7 +71,7 @@ export function PhotoUploader({ lockerId, onUpload }: Props) {
         disabled={uploading}
         className="min-h-[44px]"
       >
-        {uploading ? "アップロード中..." : "写真を追加"}
+        {uploading ? "アップロード中..." : count > 0 ? "さらに写真を追加" : "写真を追加"}
       </Button>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
