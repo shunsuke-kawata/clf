@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabaseAdmin
     .from("lockers")
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, name: parsed.data.name || null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();

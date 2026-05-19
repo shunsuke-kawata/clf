@@ -6,8 +6,9 @@ export const pricingItemSchema = z.object({
   price: z.number().int().nonnegative(),
 });
 
+// フォーム入力スキーマ（name は空文字を許容）
 export const lockerSchema = z.object({
-  name: z.string().min(1, "名称は必須です"),
+  name: z.string(),
   lat: z.number(),
   lng: z.number(),
   note: z.string().optional(),
@@ -17,8 +18,10 @@ export const lockerSchema = z.object({
 export type PricingItem = z.infer<typeof pricingItemSchema>;
 export type LockerInput = z.infer<typeof lockerSchema>;
 
-export type Locker = LockerInput & {
+// DB エンティティ型（name は NULL 許容）
+export type Locker = Omit<LockerInput, "name"> & {
   id: string;
+  name: string | null;
   created_at: string;
   updated_at: string;
 };

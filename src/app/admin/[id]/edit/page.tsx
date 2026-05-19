@@ -40,7 +40,7 @@ export default async function EditLockerPage({ params }: Props) {
           mode="edit"
           lockerId={locker.id}
           defaultValues={{
-            name: locker.name,
+            name: locker.name ?? "",
             lat: locker.lat,
             lng: locker.lng,
             note: locker.note ?? "",
