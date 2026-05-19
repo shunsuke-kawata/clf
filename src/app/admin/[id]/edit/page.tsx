@@ -35,7 +35,7 @@ export default async function EditLockerPage({ params }: Props) {
         </Link>
         <h1 className="text-base font-semibold">編集</h1>
       </header>
-      <main className="max-w-lg mx-auto px-4 py-5">
+      <main className="w-full max-w-lg mx-auto px-4 py-5">
         <LockerForm
           mode="edit"
           lockerId={locker.id}

@@ -30,10 +30,10 @@ git push -u origin HEAD
 gh pr create --base develop --title "..." --body "..."
 ```
 
-### ステップ4: Notion Issue のステータスを「進行中」に更新する
+### ステップ4: Notion Issue のステータスを「レビュー中」に更新する
 
 入力内容に Notion ページ URL が含まれている場合のみ実施する。
-`mcp__claude_ai_Notion__notion-update-page` でステータスを `"進行中"` に更新する。
+`mcp__claude_ai_Notion__notion-update-page` でステータスを `"レビュー中"` に更新する。
 
 ## 完了報告
 

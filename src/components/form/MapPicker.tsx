@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useEffect, useRef } from "react";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -29,13 +29,36 @@ function ClickHandler({
   return null;
 }
 
+// flyTarget が変わったときだけ地図を移動する
+function FlyToController({
+  target,
+}: {
+  target: { lat: number; lng: number } | null;
+}) {
+  const map = useMap();
+  const prevTarget = useRef<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (!target) return;
+    if (
+      prevTarget.current?.lat === target.lat &&
+      prevTarget.current?.lng === target.lng
+    ) return;
+    prevTarget.current = target;
+    map.flyTo([target.lat, target.lng], 15, { duration: 0.8 });
+  }, [target, map]);
+
+  return null;
+}
+
 type Props = {
   lat: number;
   lng: number;
   onChange: (lat: number, lng: number) => void;
+  flyTarget?: { lat: number; lng: number } | null;
 };
 
-export default function MapPicker({ lat, lng, onChange }: Props) {
+export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Props) {
   useEffect(() => {
     fixLeafletIcon();
   }, []);
@@ -52,6 +75,7 @@ export default function MapPicker({ lat, lng, onChange }: Props) {
       />
       <ClickHandler onChange={onChange} />
       <Marker position={[lat, lng]} />
+      <FlyToController target={flyTarget} />
     </MapContainer>
   );
 }
