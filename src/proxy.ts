@@ -1,62 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SignJWT, jwtVerify } from "jose";
 
-const COOKIE_NAME = "clf_session";
-const encoder = new TextEncoder();
+const ACCESS_COOKIE = "clf_access";
+const REFRESH_COOKIE = "clf_refresh";
+const ACCESS_MAX_AGE = 60 * 15; // 15分
 
-async function hmacHex(value: string, secret: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(value));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+function getSecret(): Uint8Array {
+  const secret = process.env.SESSION_SECRET ?? "";
+  return new TextEncoder().encode(secret);
 }
 
-async function verify(signed: string, secret: string): Promise<boolean> {
-  const lastDot = signed.lastIndexOf(".");
-  if (lastDot === -1) return false;
-
-  const value = signed.slice(0, lastDot);
-  const sig = signed.slice(lastDot + 1);
-  const expected = await hmacHex(value, secret);
-
-  if (sig.length !== expected.length) return false;
-
-  // 定数時間比較（HEX文字列をcharCodeで比較）
-  let diff = 0;
-  for (let i = 0; i < sig.length; i++) {
-    diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+async function verifyToken(token: string, subject: string): Promise<boolean> {
+  if (!token || !process.env.SESSION_SECRET) return false;
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    return payload.sub === subject;
+  } catch {
+    return false;
   }
-  return diff === 0;
+}
+
+async function issueAccessToken(): Promise<string> {
+  return new SignJWT({})
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(ACCESS_COOKIE)
+    .setIssuedAt()
+    .setExpirationTime("15m")
+    .sign(getSecret());
 }
 
 export async function proxy(req: NextRequest) {
-  const secret = process.env.SESSION_SECRET ?? "";
-  const token = req.cookies.get(COOKIE_NAME)?.value ?? "";
-  const authenticated = secret ? await verify(token, secret) : false;
-
   const { pathname } = req.nextUrl;
-
-  if (pathname.startsWith("/admin")) {
-    if (!authenticated) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-  }
-
   const isWriteApi =
-    pathname.startsWith("/api/lockers") || pathname.startsWith("/api/photos");
-  const isWriteMethod = ["POST", "PUT", "DELETE"].includes(req.method);
+    (pathname.startsWith("/api/lockers") || pathname.startsWith("/api/photos")) &&
+    ["POST", "PUT", "DELETE"].includes(req.method);
+  const isProtected = pathname.startsWith("/admin") || isWriteApi;
 
-  if (isWriteApi && isWriteMethod && !authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isProtected) return NextResponse.next();
+
+  const accessToken = req.cookies.get(ACCESS_COOKIE)?.value ?? "";
+  if (await verifyToken(accessToken, ACCESS_COOKIE)) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // アクセストークン期限切れ → リフレッシュトークンで透過的に更新
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value ?? "";
+  if (await verifyToken(refreshToken, REFRESH_COOKIE)) {
+    const newAccessToken = await issueAccessToken();
+    const response = NextResponse.next();
+    response.cookies.set(ACCESS_COOKIE, newAccessToken, {
+      httpOnly: true,
+      secure: req.nextUrl.protocol === "https:",
+      sameSite: "lax",
+      maxAge: ACCESS_MAX_AGE,
+      path: "/",
+    });
+    return response;
+  }
+
+  // 両トークンとも無効
+  if (pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
 export const config = {
