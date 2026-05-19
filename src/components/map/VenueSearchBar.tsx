@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
-import { Button } from "@/components/ui/button";
 import L from "leaflet";
 
 type SearchResult = {
@@ -109,36 +108,77 @@ export function VenueSearchBar({ onResult }: Props) {
   return (
     <div
       ref={containerRef}
-      className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-[calc(100%-2rem)] max-w-sm"
+      className="absolute top-3 left-4 right-4 z-[1000]"
     >
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setError("");
-          }}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
-          placeholder="会場名・駅名で検索"
-          className="flex-1 rounded-md border border-input bg-background px-4 py-2 text-sm shadow-md outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-          autoComplete="off"
-        />
-        <Button type="submit" disabled={loading} className="min-h-[44px] shadow-md">
-          {loading ? "..." : "検索"}
-        </Button>
+      <form onSubmit={handleSearch}>
+        <div className="flex items-center bg-white rounded-full shadow-lg h-[52px] px-4 gap-2">
+          <svg
+            className="w-5 h-5 text-gray-400 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
+            />
+          </svg>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setError("");
+            }}
+            onFocus={() => suggestions.length > 0 && setOpen(true)}
+            placeholder="会場名・駅名で検索"
+            className="flex-1 bg-transparent text-sm outline-none text-gray-800 placeholder:text-gray-400 min-w-0"
+            autoComplete="off"
+          />
+          {loading ? (
+            <span className="text-gray-400 text-xs shrink-0">…</span>
+          ) : (
+            <button
+              type="submit"
+              className="text-blue-500 text-sm font-medium shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            >
+              検索
+            </button>
+          )}
+        </div>
       </form>
 
       {open && suggestions.length > 0 && (
-        <ul className="mt-1 rounded-md border border-border bg-background shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+        <ul className="mt-2 rounded-2xl bg-white shadow-lg overflow-hidden max-h-60 overflow-y-auto">
           {suggestions.map((s, i) => (
             <li key={i}>
               <button
                 type="button"
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent"
+                className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-3"
                 onClick={() => commit(s)}
               >
-                <span className="block truncate">{s.display_name}</span>
+                <svg
+                  className="w-4 h-4 text-gray-400 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span className="block truncate text-gray-700">{s.display_name}</span>
               </button>
             </li>
           ))}
@@ -146,7 +186,7 @@ export function VenueSearchBar({ onResult }: Props) {
       )}
 
       {error && (
-        <p className="mt-1 text-xs text-destructive bg-background px-2 py-1 rounded shadow">
+        <p className="mt-1 text-xs text-red-500 bg-white px-4 py-2 rounded-xl shadow">
           {error}
         </p>
       )}

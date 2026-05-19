@@ -1,61 +1,59 @@
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import { useFormContext } from "react-hook-form";
 import type { LockerInput } from "@/lib/schemas/locker";
 
+const PRICE_OPTIONS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+
 export function PricingEditor() {
-  const { register, control, formState: { errors } } = useFormContext<LockerInput>();
-  const { fields, append, remove } = useFieldArray({ control, name: "pricing" });
+  const { watch, setValue } = useFormContext<LockerInput>();
+  const pricing = watch("pricing");
+
+  function addPrice(price: number) {
+    setValue("pricing", [...pricing, price]);
+  }
+
+  function removePrice(index: number) {
+    setValue("pricing", pricing.filter((_, i) => i !== index));
+  }
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">料金</label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append({ size: "", duration: "", price: 0 })}
-          className="min-h-[44px]"
-        >
-          ＋ 追加
-        </Button>
-      </div>
+      <label className="text-sm font-medium">料金</label>
 
-      {fields.map((field, i) => (
-        <div key={field.id} className="flex gap-2 items-start">
-          <input
-            {...register(`pricing.${i}.size`)}
-            placeholder="サイズ (S/M/L)"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-          />
-          <input
-            {...register(`pricing.${i}.duration`)}
-            placeholder="時間 (1時間)"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-          />
-          <input
-            {...register(`pricing.${i}.price`, { valueAsNumber: true })}
-            type="number"
-            placeholder="円"
-            className="w-20 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => remove(i)}
-            className="min-h-[44px] text-destructive"
-          >
-            削除
-          </Button>
+      {pricing.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {pricing.map((price, i) => (
+            <span
+              key={i}
+              className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-primary text-primary-foreground text-sm"
+            >
+              ¥{price.toLocaleString()}
+              <button
+                type="button"
+                onClick={() => removePrice(i)}
+                className="flex items-center justify-center w-5 h-5 rounded-full hover:bg-white/20 text-xs leading-none"
+                aria-label="削除"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
         </div>
-      ))}
-
-      {errors.pricing && (
-        <p className="text-xs text-destructive">料金情報を正しく入力してください</p>
       )}
+
+      <div className="grid grid-cols-5 gap-2">
+        {PRICE_OPTIONS.map((price) => (
+          <button
+            key={price}
+            type="button"
+            onClick={() => addPrice(price)}
+            className="py-2.5 rounded-lg border border-input bg-background text-sm font-medium hover:bg-accent active:scale-95 transition-transform"
+          >
+            {price}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

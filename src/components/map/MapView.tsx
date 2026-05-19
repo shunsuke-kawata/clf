@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Locker } from "@/lib/schemas/locker";
@@ -41,11 +41,13 @@ export default function MapView({ lockers, onMapClick }: Props) {
       center={[35.6812, 139.7671]} // 東京駅
       zoom={13}
       className="h-dvh w-full"
+      zoomControl={false}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <ZoomControl position="bottomleft" />
       <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       {lockers.map((locker) => (
