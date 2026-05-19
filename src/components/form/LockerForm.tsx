@@ -247,7 +247,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           <p className="text-sm text-destructive text-center">{serverError}</p>
         )}
 
-        <div className="flex flex-col gap-3 pb-6">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 -mx-4 px-4 flex flex-col gap-3">
           <Button type="submit" disabled={submitting} className="min-h-[44px]">
             {submitting ? "保存中..." : mode === "create" ? "次へ（写真を追加）" : "更新する"}
           </Button>
