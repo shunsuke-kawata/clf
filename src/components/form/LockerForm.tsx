@@ -38,6 +38,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [geoError, setGeoError] = useState("");
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapKey] = useState(() => Date.now());
 
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
@@ -152,8 +153,6 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 w-full">
 
         <div className="flex flex-col gap-2 w-full">
-          <label className="text-sm font-medium">位置</label>
-
           {mode === "create" && (
             <div className="flex w-full rounded-lg border border-border overflow-hidden text-sm">
               <button
@@ -183,6 +182,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
 
           <div className="relative h-48 w-full">
             <MapPicker
+              key={mapKey}
               lat={lat}
               lng={lng}
               onChange={(newLat, newLng) => {
@@ -247,7 +247,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           <p className="text-sm text-destructive text-center">{serverError}</p>
         )}
 
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 -mx-4 px-4 flex flex-col gap-3">
+        <div className="sticky bottom-0 z-[800] bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 -mx-4 px-4 flex flex-col gap-3">
           <Button type="submit" disabled={submitting} className="min-h-[44px]">
             {submitting ? "保存中..." : mode === "create" ? "次へ（写真を追加）" : "更新する"}
           </Button>

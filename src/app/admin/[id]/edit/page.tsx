@@ -25,7 +25,7 @@ export default async function EditLockerPage({ params }: Props) {
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
+      <header className="sticky top-0 z-[800] bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
         <Link
           href={`/lockers/${locker.id}`}
           className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"

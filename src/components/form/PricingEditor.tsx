@@ -48,7 +48,7 @@ export function PricingEditor() {
             key={price}
             type="button"
             onClick={() => addPrice(price)}
-            className="py-2.5 rounded-lg border border-input bg-background text-sm font-medium hover:bg-accent active:scale-95 transition-transform"
+            className="py-1.5 rounded-lg border border-input bg-background text-sm font-medium hover:bg-accent active:scale-95 transition-transform"
           >
             {price}
           </button>
