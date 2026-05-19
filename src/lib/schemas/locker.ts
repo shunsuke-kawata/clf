@@ -1,24 +1,18 @@
 import { z } from "zod";
 
-export const pricingItemSchema = z.object({
-  size: z.string().min(1),
-  duration: z.string().min(1),
-  price: z.number().int().nonnegative(),
-});
-
 export const lockerSchema = z.object({
-  name: z.string().min(1, "名称は必須です"),
+  name: z.string(),
   lat: z.number(),
   lng: z.number(),
   note: z.string().optional(),
-  pricing: z.array(pricingItemSchema),
+  pricing: z.array(z.number().int().positive()),
 });
 
-export type PricingItem = z.infer<typeof pricingItemSchema>;
 export type LockerInput = z.infer<typeof lockerSchema>;
 
-export type Locker = LockerInput & {
+export type Locker = Omit<LockerInput, "name"> & {
   id: string;
+  name: string | null;
   created_at: string;
   updated_at: string;
 };

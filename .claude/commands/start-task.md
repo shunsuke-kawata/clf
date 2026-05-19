@@ -9,7 +9,7 @@
 - parent: `{ "type": "data_source_id", "data_source_id": "b2ee31df-fe91-4862-9e55-ee7f5709a22e" }`
 - properties:
   - タイトル: 入力内容から読み取ったタスクタイトル
-  - ステータス: `"未着手"`
+  - ステータス: `"進行中"`
   - 優先度: 入力内容から読み取った優先度（指定なければ `"中"`）
   - 種別: 入力内容から読み取った種別（指定なければ省略）
 
@@ -17,21 +17,30 @@
 
 ### ステップ2: GitHub に Issue を作成する
 
-GitHub MCP を使って `shunsuke-kawata/clf` リポジトリに Issue を作成してください。
+`gh` CLI を使って `shunsuke-kawata/clf` リポジトリに Issue を作成してください。
 
-- title: `[CLF-{Issue番号}] {タスクタイトル}`
+```bash
+gh issue create --repo shunsuke-kawata/clf \
+  --title "[CLF-{Issue番号}] {タスクタイトル}" \
+  --body "..."
+```
+
 - body: 入力内容の詳細説明。末尾に `Notion: {作成した Notion ページの URL}` を追記する
 
 ### ステップ3: Git ブランチを作成・切り替える
 
-CLF のブランチ命名規則に従ってブランチを作成し、切り替えてください。
+**重要: ブランチ作成は必ずステップ1・2の Issue 作成後に行うこと。**
+
+必ず develop に切り替えてから最新を取得し、ブランチを作成する。
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feat/issue{番号}
+```
 
 - 形式: `feat/issue{Issue番号}`
 - 例: Issue 番号が 3 なら `feat/issue3`
-
-```bash
-git checkout -b feat/issue{番号}
-```
 
 ## 完了報告
 
