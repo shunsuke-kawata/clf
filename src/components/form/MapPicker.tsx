@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -26,6 +27,22 @@ function ClickHandler({
       onChange(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+// マウント時とbfcache復元時にタイルのフリーズを防ぐ
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    // 外部リンクを開いてブラウザバックした際、bfcacheから復元されるとuseEffectは
+    // 再実行されないが、pageshoweventは発火するので、そこでinvalidateSizeを呼ぶ
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) map.invalidateSize();
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [map]);
   return null;
 }
 
@@ -73,6 +90,7 @@ export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Prop
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <MapResizer />
       <ClickHandler onChange={onChange} />
       <Marker position={[lat, lng]} />
       <FlyToController target={flyTarget} />

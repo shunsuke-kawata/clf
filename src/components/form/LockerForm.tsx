@@ -38,6 +38,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [geoError, setGeoError] = useState("");
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapKey, setMapKey] = useState(0);
 
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
@@ -56,6 +57,9 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const lng = watch("lng");
 
   useEffect(() => {
+    // useStateの初期値はルーターキャッシュで保持されるため、
+    // マウントのたびにkeyを更新してMapPickerを強制リマウントする
+    setMapKey(Date.now());
     if (mode === "create") fetchCurrentLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -132,28 +136,33 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
 
   if (photoStep && savedId) {
     return (
-      <div className="flex flex-col gap-5">
-        <div className="rounded-lg bg-muted p-4 text-sm text-center">
-          ロッカーを保存しました。写真を追加できます（任意）。
+      <div className="flex flex-col h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-4 py-5">
+          <div className="rounded-lg bg-muted p-4 text-sm text-center">
+            ロッカーを保存しました。写真を追加できます（任意）。
+          </div>
+          <PhotoUploader lockerId={savedId} onUpload={() => {}} />
         </div>
-        <PhotoUploader lockerId={savedId} onUpload={() => {}} />
-        <Button
-          onClick={() => router.push(`/lockers/${savedId}`)}
-          className="min-h-[44px]"
-        >
-          完了
-        </Button>
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4">
+          <Button
+            onClick={() => router.push(`/lockers/${savedId}`)}
+            className="min-h-[44px] w-full"
+          >
+            完了
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 w-full">
-
-        <div className="flex flex-col gap-2 w-full">
-          <label className="text-sm font-medium">位置</label>
-
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto"
+      >
+        {/* 地図セクション（固定） */}
+        <div className="flex-shrink-0 px-4 pt-4 flex flex-col gap-2">
           {mode === "create" && (
             <div className="flex w-full rounded-lg border border-border overflow-hidden text-sm">
               <button
@@ -182,15 +191,22 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           )}
 
           <div className="relative h-48 w-full">
-            <MapPicker
-              lat={lat}
-              lng={lng}
-              onChange={(newLat, newLng) => {
-                setValue("lat", newLat, { shouldValidate: true });
-                setValue("lng", newLng, { shouldValidate: true });
-              }}
-              flyTarget={locationMode === "spot" ? flyTarget : null}
-            />
+            {mapKey === 0 ? (
+              <div className="h-48 rounded-lg bg-muted flex items-center justify-center">
+                <p className="text-sm text-muted-foreground">地図を読み込み中...</p>
+              </div>
+            ) : (
+              <MapPicker
+                key={mapKey}
+                lat={lat}
+                lng={lng}
+                onChange={(newLat, newLng) => {
+                  setValue("lat", newLat, { shouldValidate: true });
+                  setValue("lng", newLng, { shouldValidate: true });
+                }}
+                flyTarget={locationMode === "spot" ? flyTarget : null}
+              />
+            )}
             {locationMode === "spot" && geoState === "loading" && (
               <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center rounded-lg z-[400]">
                 <p className="text-sm text-muted-foreground">現在地を取得中...</p>
@@ -198,7 +214,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
             )}
           </div>
 
-          <p className="flex items-center justify-between text-xs text-muted-foreground">
+          <p className="flex items-center justify-between text-xs text-muted-foreground pb-1">
             {locationMode === "pin" || mode === "edit" ? (
               <>地図をタップして場所を指定 — {lat.toFixed(5)}, {lng.toFixed(5)}</>
             ) : geoState === "ok" ? (
@@ -215,39 +231,45 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">場所の名称</label>
-          <input
-            {...register("name")}
-            placeholder="例: 渋谷駅東口コインロッカー"
-            className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-          />
-          {errors.name && (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
-          )}
+        {/* スクロール可能なコンテンツ */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex flex-col gap-5 px-4 py-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">場所の名称</label>
+              <input
+                {...register("name")}
+                placeholder="例: 渋谷駅東口コインロッカー"
+                className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
+              />
+              {errors.name && (
+                <p className="text-xs text-destructive">{errors.name.message}</p>
+              )}
+            </div>
+
+            <PricingEditor />
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">メモ</label>
+              <textarea
+                {...register("note")}
+                placeholder="混雑状況・アクセスメモなど"
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
+              />
+            </div>
+
+            {mode === "edit" && savedId && (
+              <PhotoUploader lockerId={savedId} onUpload={() => {}} />
+            )}
+
+            {serverError && (
+              <p className="text-sm text-destructive text-center">{serverError}</p>
+            )}
+          </div>
         </div>
 
-        <PricingEditor />
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">メモ</label>
-          <textarea
-            {...register("note")}
-            placeholder="混雑状況・アクセスメモなど"
-            rows={3}
-            className="w-full rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
-          />
-        </div>
-
-        {mode === "edit" && savedId && (
-          <PhotoUploader lockerId={savedId} onUpload={() => {}} />
-        )}
-
-        {serverError && (
-          <p className="text-sm text-destructive text-center">{serverError}</p>
-        )}
-
-        <div className="flex flex-col gap-3 pb-6">
+        {/* ボタン（固定） */}
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4 flex flex-col gap-3">
           <Button type="submit" disabled={submitting} className="min-h-[44px]">
             {submitting ? "保存中..." : mode === "create" ? "次へ（写真を追加）" : "更新する"}
           </Button>
