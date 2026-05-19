@@ -14,9 +14,7 @@ export default function NewLockerPage() {
         </Link>
         <h1 className="text-base font-semibold">新規投稿</h1>
       </header>
-      <main className="w-full max-w-lg mx-auto px-4 py-5">
-        <LockerForm mode="create" />
-      </main>
+      <LockerForm mode="create" />
     </>
   );
 }
