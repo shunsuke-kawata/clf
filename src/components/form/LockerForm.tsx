@@ -191,16 +191,22 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           )}
 
           <div className="relative h-48 w-full">
-            <MapPicker
-              key={mapKey}
-              lat={lat}
-              lng={lng}
-              onChange={(newLat, newLng) => {
-                setValue("lat", newLat, { shouldValidate: true });
-                setValue("lng", newLng, { shouldValidate: true });
-              }}
-              flyTarget={locationMode === "spot" ? flyTarget : null}
-            />
+            {mapKey === 0 ? (
+              <div className="h-48 rounded-lg bg-muted flex items-center justify-center">
+                <p className="text-sm text-muted-foreground">地図を読み込み中...</p>
+              </div>
+            ) : (
+              <MapPicker
+                key={mapKey}
+                lat={lat}
+                lng={lng}
+                onChange={(newLat, newLng) => {
+                  setValue("lat", newLat, { shouldValidate: true });
+                  setValue("lng", newLng, { shouldValidate: true });
+                }}
+                flyTarget={locationMode === "spot" ? flyTarget : null}
+              />
+            )}
             {locationMode === "spot" && geoState === "loading" && (
               <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center rounded-lg z-[400]">
                 <p className="text-sm text-muted-foreground">現在地を取得中...</p>

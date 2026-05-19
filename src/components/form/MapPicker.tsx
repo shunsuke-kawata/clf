@@ -30,12 +30,18 @@ function ClickHandler({
   return null;
 }
 
-// マウント時に地図サイズを再計算してタイルのフリーズを防ぐ
+// マウント時とbfcache復元時にタイルのフリーズを防ぐ
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    const id = requestAnimationFrame(() => map.invalidateSize());
-    return () => cancelAnimationFrame(id);
+    map.invalidateSize();
+    // 外部リンクを開いてブラウザバックした際、bfcacheから復元されるとuseEffectは
+    // 再実行されないが、pageshoweventは発火するので、そこでinvalidateSizeを呼ぶ
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) map.invalidateSize();
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
   }, [map]);
   return null;
 }
