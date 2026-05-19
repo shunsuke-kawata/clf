@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -8,6 +8,7 @@ import type { Locker } from "@/lib/schemas/locker";
 import { LockerMarker } from "./LockerMarker";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
+import { SearchResultMarker } from "./SearchResultMarker";
 
 // Leaflet デフォルトアイコン修正
 function fixLeafletIcon() {
@@ -26,7 +27,11 @@ type Props = {
   onMapClick?: (lat: number, lng: number) => void;
 };
 
+type SearchPin = { lat: number; lng: number; name: string };
+
 export default function MapView({ lockers, onMapClick }: Props) {
+  const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
+
   useEffect(() => {
     fixLeafletIcon();
   }, []);
@@ -41,11 +46,12 @@ export default function MapView({ lockers, onMapClick }: Props) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <VenueSearchBar />
+      <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       {lockers.map((locker) => (
         <LockerMarker key={locker.id} locker={locker} />
       ))}
+      {searchPin && <SearchResultMarker {...searchPin} />}
     </MapContainer>
   );
 }
