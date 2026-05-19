@@ -19,6 +19,9 @@ const MapPicker = dynamic(() => import("./MapPicker"), {
   ),
 });
 
+type LocationMode = "pin" | "spot";
+type GeoState = "idle" | "loading" | "ok" | "error";
+
 type Props = {
   defaultValues?: Partial<LockerInput>;
   lockerId?: string;
@@ -28,9 +31,13 @@ type Props = {
 export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const router = useRouter();
   const [savedId, setSavedId] = useState<string | null>(lockerId ?? null);
-  const [photoStep, setPhotoStep] = useState(false); // 新規作成後の写真アップロードステップ
+  const [photoStep, setPhotoStep] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [locationMode, setLocationMode] = useState<LocationMode>("pin");
+  const [geoState, setGeoState] = useState<GeoState>("idle");
+  const [geoError, setGeoError] = useState("");
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
 
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
@@ -47,6 +54,34 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = methods;
   const lat = watch("lat");
   const lng = watch("lng");
+
+  async function fetchCurrentLocation() {
+    setGeoState("loading");
+    setGeoError("");
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+      );
+      const { latitude, longitude } = pos.coords;
+      setValue("lat", latitude, { shouldValidate: true });
+      setValue("lng", longitude, { shouldValidate: true });
+      setFlyTarget({ lat: latitude, lng: longitude });
+      setGeoState("ok");
+    } catch {
+      setGeoError("現在地を取得できませんでした。位置情報の許可を確認してください。");
+      setGeoState("error");
+    }
+  }
+
+  function handleLocationModeChange(next: LocationMode) {
+    setLocationMode(next);
+    if (next === "spot") {
+      fetchCurrentLocation();
+    } else {
+      setGeoState("idle");
+      setGeoError("");
+    }
+  }
 
   async function onSubmit(data: LockerInput) {
     setServerError("");
@@ -71,7 +106,6 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     const saved: Locker = await res.json();
 
     if (mode === "create") {
-      // 新規作成後は写真アップロードステップへ
       setSavedId(saved.id);
       setPhotoStep(true);
     } else {
@@ -91,7 +125,6 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     }
   }
 
-  // 新規作成後の写真アップロードステップ
   if (photoStep && savedId) {
     return (
       <div className="flex flex-col gap-5">
@@ -111,7 +144,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 w-full">
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium">場所の名称 *</label>
@@ -125,19 +158,68 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">場所を地図でタップ *</label>
-          <p className="text-xs text-muted-foreground">
-            現在: {lat.toFixed(5)}, {lng.toFixed(5)}
+        <div className="flex flex-col gap-2 w-full">
+          <label className="text-sm font-medium">位置</label>
+
+          {mode === "create" && (
+            <div className="flex w-full rounded-lg border border-border overflow-hidden text-sm">
+              <button
+                type="button"
+                onClick={() => handleLocationModeChange("pin")}
+                className={`flex-1 py-2.5 font-medium transition-colors ${
+                  locationMode === "pin"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                地図から登録
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLocationModeChange("spot")}
+                className={`flex-1 py-2.5 font-medium transition-colors ${
+                  locationMode === "spot"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                現在地を登録
+              </button>
+            </div>
+          )}
+
+          <div className="relative h-48 w-full">
+            <MapPicker
+              lat={lat}
+              lng={lng}
+              onChange={(newLat, newLng) => {
+                setValue("lat", newLat, { shouldValidate: true });
+                setValue("lng", newLng, { shouldValidate: true });
+              }}
+              flyTarget={locationMode === "spot" ? flyTarget : null}
+            />
+            {locationMode === "spot" && geoState === "loading" && (
+              <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center rounded-lg z-[400]">
+                <p className="text-sm text-muted-foreground">現在地を取得中...</p>
+              </div>
+            )}
+          </div>
+
+          <p className="flex items-center justify-between text-xs text-muted-foreground">
+            {locationMode === "pin" || mode === "edit" ? (
+              <>地図をタップして場所を指定 — {lat.toFixed(5)}, {lng.toFixed(5)}</>
+            ) : geoState === "ok" ? (
+              <>
+                <span>{lat.toFixed(5)}, {lng.toFixed(5)}</span>
+                <button type="button" onClick={fetchCurrentLocation} className="text-primary underline">再取得</button>
+              </>
+            ) : geoState === "error" ? (
+              <>
+                <span className="text-destructive">{geoError}</span>
+                <button type="button" onClick={fetchCurrentLocation} className="text-primary underline">再試行</button>
+              </>
+            ) : null}
           </p>
-          <MapPicker
-            lat={lat}
-            lng={lng}
-            onChange={(newLat, newLng) => {
-              setValue("lat", newLat, { shouldValidate: true });
-              setValue("lng", newLng, { shouldValidate: true });
-            }}
-          />
         </div>
 
         <PricingEditor />
@@ -148,7 +230,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
             {...register("note")}
             placeholder="混雑状況・アクセスメモなど"
             rows={3}
-            className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
+            className="w-full rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
           />
         </div>
 
