@@ -1,10 +1,22 @@
+import Link from "next/link";
 import { LockerForm } from "@/components/form/LockerForm";
 
 export default function NewLockerPage() {
   return (
-    <main className="max-w-lg mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold mb-6">新規投稿</h1>
-      <LockerForm mode="create" />
-    </main>
+    <>
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
+        <Link
+          href="/"
+          className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          aria-label="地図に戻る"
+        >
+          ←
+        </Link>
+        <h1 className="text-base font-semibold">新規投稿</h1>
+      </header>
+      <main className="max-w-lg mx-auto px-4 py-5">
+        <LockerForm mode="create" />
+      </main>
+    </>
   );
 }

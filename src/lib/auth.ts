@@ -1,39 +1,36 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { SignJWT, jwtVerify } from "jose";
+import { timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 
-const COOKIE_NAME = "clf_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7日
+export const ACCESS_COOKIE = "clf_access";
+export const REFRESH_COOKIE = "clf_refresh";
 
-function getSecret(): string {
+const ACCESS_MAX_AGE = 60 * 15; // 15分
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30日
+
+function getSecret(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
   if (!secret) throw new Error("SESSION_SECRET must be set");
-  return secret;
+  return new TextEncoder().encode(secret);
 }
 
-function sign(value: string): string {
-  const hmac = createHmac("sha256", getSecret());
-  hmac.update(value);
-  return `${value}.${hmac.digest("hex")}`;
+function cookieOptions(maxAge: number) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge,
+    path: "/",
+  };
 }
 
-function verify(signed: string): string | null {
-  const lastDot = signed.lastIndexOf(".");
-  if (lastDot === -1) return null;
-
-  const value = signed.slice(0, lastDot);
-  const sig = signed.slice(lastDot + 1);
-
-  const expected = createHmac("sha256", getSecret()).update(value).digest("hex");
-
-  try {
-    const sigBuf = Buffer.from(sig, "hex");
-    const expectedBuf = Buffer.from(expected, "hex");
-    if (sigBuf.length !== expectedBuf.length) return null;
-    if (!timingSafeEqual(sigBuf, expectedBuf)) return null;
-    return value;
-  } catch {
-    return null;
-  }
+async function issueJwt(subject: string, expiresIn: string): Promise<string> {
+  return new SignJWT({})
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(subject)
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(getSecret());
 }
 
 export function checkPassword(input: string): boolean {
@@ -50,25 +47,29 @@ export function checkPassword(input: string): boolean {
 }
 
 export async function createSession(): Promise<void> {
+  const [accessToken, refreshToken] = await Promise.all([
+    issueJwt(ACCESS_COOKIE, "15m"),
+    issueJwt(REFRESH_COOKIE, "30d"),
+  ]);
   const cookieStore = await cookies();
-  const token = sign("authenticated");
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_MAX_AGE));
+  cookieStore.set(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_MAX_AGE));
 }
 
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(ACCESS_COOKIE);
+  cookieStore.delete(REFRESH_COOKIE);
 }
 
 export async function getSession(): Promise<boolean> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const token = cookieStore.get(ACCESS_COOKIE)?.value;
   if (!token) return false;
-  return verify(token) === "authenticated";
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    return payload.sub === ACCESS_COOKIE;
+  } catch {
+    return false;
+  }
 }
