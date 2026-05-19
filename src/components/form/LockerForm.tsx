@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const [photoStep, setPhotoStep] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [locationMode, setLocationMode] = useState<LocationMode>("pin");
+  const [locationMode, setLocationMode] = useState<LocationMode>(mode === "create" ? "spot" : "pin");
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [geoError, setGeoError] = useState("");
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
@@ -54,6 +54,11 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = methods;
   const lat = watch("lat");
   const lng = watch("lng");
+
+  useEffect(() => {
+    if (mode === "create") fetchCurrentLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function fetchCurrentLocation() {
     setGeoState("loading");
@@ -146,18 +151,6 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 w-full">
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">場所の名称</label>
-          <input
-            {...register("name")}
-            placeholder="例: 渋谷駅東口コインロッカー（任意）"
-            className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-          />
-          {errors.name && (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
-          )}
-        </div>
-
         <div className="flex flex-col gap-2 w-full">
           <label className="text-sm font-medium">位置</label>
 
@@ -220,6 +213,18 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
               </>
             ) : null}
           </p>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">場所の名称</label>
+          <input
+            {...register("name")}
+            placeholder="例: 渋谷駅東口コインロッカー"
+            className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
+          />
+          {errors.name && (
+            <p className="text-xs text-destructive">{errors.name.message}</p>
+          )}
         </div>
 
         <PricingEditor />
