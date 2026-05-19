@@ -17,12 +17,19 @@
 
 ### ステップ2: GitHub に Issue を作成する
 
-GitHub MCP を使って `shunsuke-kawata/clf` リポジトリに Issue を作成してください。
+`gh` CLI を使って `shunsuke-kawata/clf` リポジトリに Issue を作成してください。
 
-- title: `[CLF-{Issue番号}] {タスクタイトル}`
+```bash
+gh issue create --repo shunsuke-kawata/clf \
+  --title "[CLF-{Issue番号}] {タスクタイトル}" \
+  --body "..."
+```
+
 - body: 入力内容の詳細説明。末尾に `Notion: {作成した Notion ページの URL}` を追記する
 
 ### ステップ3: Git ブランチを作成・切り替える
+
+**重要: ブランチ作成は必ずステップ1・2の Issue 作成後に行うこと。**
 
 CLF のブランチ命名規則に従ってブランチを作成し、切り替えてください。
 

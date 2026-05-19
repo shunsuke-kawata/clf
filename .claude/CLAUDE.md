@@ -111,8 +111,20 @@ Nominatim API（無料・APIキー不要）を `/api/geocode` 経由で呼び出
 ## 開発フロー
 
 - ブランチ: `main` / `develop` / `feat/issue{番号}`
-- 作業開始前に GitHub Issue と Notion タスクを作成する
+- **作業開始前に必ず Notion Issue と GitHub Issue を作成してからブランチを切る**（/start-task スキルを使う）
 - リポジトリ: https://github.com/shunsuke-kawata/clf
+
+## GitHub 操作
+
+GitHub MCP はこのプロジェクトで Issue 作成の権限がない。**GitHub への書き込み操作は常に `gh` CLI を使うこと。**
+
+```bash
+# Issue 作成
+gh issue create --repo shunsuke-kawata/clf --title "..." --body "..."
+
+# PR 作成
+gh pr create --base develop --title "..." --body "..."
+```
 
 ## コマンド
 
