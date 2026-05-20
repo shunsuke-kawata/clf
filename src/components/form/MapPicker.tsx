@@ -6,16 +6,15 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-lea
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-function fixLeafletIcon() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  });
-}
+// Leaflet デフォルトアイコン修正（モジュールロード時に即時実行）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 function ClickHandler({
   onChange,
@@ -71,15 +70,11 @@ function FlyToController({
 type Props = {
   lat: number;
   lng: number;
-  onChange: (lat: number, lng: number) => void;
+  onChange?: (lat: number, lng: number) => void;
   flyTarget?: { lat: number; lng: number } | null;
 };
 
 export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Props) {
-  useEffect(() => {
-    fixLeafletIcon();
-  }, []);
-
   return (
     <MapContainer
       center={[lat, lng]}
@@ -91,7 +86,7 @@ export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Prop
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapResizer />
-      <ClickHandler onChange={onChange} />
+      {onChange && <ClickHandler onChange={onChange} />}
       <Marker position={[lat, lng]} />
       <FlyToController target={flyTarget} />
     </MapContainer>
