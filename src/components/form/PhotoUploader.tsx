@@ -8,6 +8,7 @@ import {
   useEffect,
 } from "react";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 
 type PendingPhoto = {
   id: string;
@@ -150,6 +151,10 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
           const body = (await res
             .json()
             .catch(() => ({}))) as { error?: string };
+          logger.error("[PhotoUploader] upload failed", {
+            status: res.status,
+            error: body.error,
+          });
           setError(body.error ?? "アップロードに失敗しました");
           setUploading(false);
           return false;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -25,6 +26,7 @@ export default function LoginPage() {
       return;
     }
 
+    logger.warn("[login] auth failed", { status: res.status });
     setLoading(false);
     setError("パスワードが違います");
   }

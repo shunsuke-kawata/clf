@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 type PhotonFeature = {
   geometry: { coordinates: [number, number] };
@@ -43,10 +44,12 @@ export async function GET(req: NextRequest) {
   });
 
   if (!res.ok) {
+    logger.error("[geocode] upstream failed", { q, status: res.status });
     return NextResponse.json({ error: "Geocoding failed" }, { status: 502 });
   }
 
   const data: PhotonResponse = await res.json();
   const japan = data.features.filter((f) => f.properties.countrycode === "JP");
+  logger.debug("[geocode] ok", { q, hits: japan.length });
   return NextResponse.json(japan.slice(0, 5).map(normalize));
 }
