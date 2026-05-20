@@ -62,7 +62,7 @@ function FlyToController({
       prevTarget.current?.lng === target.lng
     ) return;
     prevTarget.current = target;
-    map.flyTo([target.lat, target.lng], 15, { duration: 0.8 });
+    map.flyTo([target.lat, target.lng], 17, { duration: 0.8 });
   }, [target, map]);
 
   return null;
@@ -83,7 +83,7 @@ export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Prop
   return (
     <MapContainer
       center={[lat, lng]}
-      zoom={15}
+      zoom={17}
       className="h-48 w-full rounded-lg"
     >
       <TileLayer
