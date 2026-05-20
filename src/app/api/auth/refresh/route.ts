@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
+import { logger } from "@/lib/logger";
 
 const ACCESS_COOKIE = "clf_access";
 const REFRESH_COOKIE = "clf_refresh";
 
 export async function POST(req: NextRequest) {
   const secret = process.env.SESSION_SECRET;
-  if (!secret) return NextResponse.json({ error: "Server error" }, { status: 500 });
+  if (!secret) {
+    logger.error("[auth/refresh] SESSION_SECRET is not set");
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 
   const secretBytes = new TextEncoder().encode(secret);
   const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value ?? "";
@@ -14,7 +18,8 @@ export async function POST(req: NextRequest) {
   try {
     const { payload } = await jwtVerify(refreshToken, secretBytes);
     if (payload.sub !== REFRESH_COOKIE) throw new Error("Invalid subject");
-  } catch {
+  } catch (e) {
+    logger.warn("[auth/refresh] invalid refresh token", e);
     return NextResponse.json({ error: "Invalid refresh token" }, { status: 401 });
   }
 

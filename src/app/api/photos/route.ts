@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 import { randomUUID } from "crypto";
 
 const BUCKET = "locker-photos";
@@ -48,14 +49,14 @@ export async function POST(req: NextRequest) {
           .upload(storageKey, file, { contentType: file.type });
         uploadError = retry.error;
       } catch (e) {
-        console.error("[photos] bucket creation failed:", e);
+        logger.error("[photos] bucket creation failed", e);
         return NextResponse.json({ error: "Storage bucket setup failed" }, { status: 500 });
       }
     }
   }
 
   if (uploadError) {
-    console.error("[photos] upload error:", uploadError);
+    logger.error("[photos] upload error", uploadError);
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (dbError) {
-    console.error("[photos] db error:", dbError);
+    logger.error("[photos] db error", dbError);
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 

@@ -9,6 +9,7 @@ import { lockerSchema, type LockerInput, type Locker } from "@/lib/schemas/locke
 import { PricingEditor } from "./PricingEditor";
 import { PhotoUploader, type PhotoUploaderHandle } from "./PhotoUploader";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 
 const MapPicker = dynamic(() => import("./MapPicker"), {
   ssr: false,
@@ -112,6 +113,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     setSubmitting(false);
 
     if (!res.ok) {
+      logger.error("[LockerForm] update failed", { id: lockerId, status: res.status });
       setServerError("保存に失敗しました");
       return;
     }
@@ -134,6 +136,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
+        logger.error("[LockerForm] create failed", { status: res.status });
         setServerError("保存に失敗しました");
         setSubmitting(false);
         return;
@@ -147,6 +150,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       const ok = await photoRef.current?.upload(targetId);
       if (!ok) {
         // ロッカーは保存済み。ユーザーがリトライ可能な状態にとどめる
+        logger.warn("[LockerForm] photo upload failed, locker saved", { id: targetId });
         setSubmitting(false);
         return;
       }
@@ -163,6 +167,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     if (res.ok) {
       router.push("/");
     } else {
+      logger.error("[LockerForm] delete failed", { id: lockerId, status: res.status });
       setServerError("削除に失敗しました");
     }
   }
