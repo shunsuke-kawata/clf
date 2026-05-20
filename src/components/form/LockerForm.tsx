@@ -5,6 +5,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 import { lockerSchema, type LockerInput, type Locker } from "@/lib/schemas/locker";
 import { PricingEditor } from "./PricingEditor";
 import { PhotoUploader, type PhotoUploaderHandle } from "./PhotoUploader";
@@ -137,6 +138,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       });
       if (!res.ok) {
         logger.error("[LockerForm] create failed", { status: res.status });
+        toast.error("登録に失敗しました");
         setServerError("保存に失敗しました");
         setSubmitting(false);
         return;
@@ -156,6 +158,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       }
     }
 
+    toast.success("コインロッカーを登録しました");
     router.push("/");
   }
 
