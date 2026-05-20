@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export const ACCESS_COOKIE = "clf_access";
 export const REFRESH_COOKIE = "clf_refresh";
@@ -54,6 +55,16 @@ export async function createSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_MAX_AGE));
   cookieStore.set(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_MAX_AGE));
+}
+
+// Route Handler から呼ぶ場合は response.cookies に直接セットする
+export async function setSessionCookies(res: NextResponse): Promise<void> {
+  const [accessToken, refreshToken] = await Promise.all([
+    issueJwt(ACCESS_COOKIE, "15m"),
+    issueJwt(REFRESH_COOKIE, "30d"),
+  ]);
+  res.cookies.set(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_MAX_AGE));
+  res.cookies.set(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_MAX_AGE));
 }
 
 export async function destroySession(): Promise<void> {
