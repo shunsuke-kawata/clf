@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkPassword, createSession } from "@/lib/auth";
+import { checkPassword, setSessionCookies } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 
-  await createSession();
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  await setSessionCookies(res);
+  return res;
 }
