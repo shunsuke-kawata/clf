@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 export async function GET() {
   const { data, error } = await supabaseReader
     .from("lockers")
-    .select("id, name, lat, lng, note, pricing, created_at, updated_at")
+    .select("id, lat, lng, note, pricing, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("lockers")
-    .insert({ ...parsed.data, name: parsed.data.name || null })
+    .insert(parsed.data)
     .select()
     .single();
 

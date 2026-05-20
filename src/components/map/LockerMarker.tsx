@@ -13,7 +13,7 @@ export function LockerMarker({ locker }: Props) {
     <Marker position={[locker.lat, locker.lng]}>
       <Popup>
         <div className="min-w-[120px]">
-          <p className="font-semibold text-sm">{locker.name || "名称なし"}</p>
+          <p className="font-semibold text-sm">コインロッカー</p>
           <Link
             href={`/lockers/${locker.id}`}
             className="text-xs text-blue-600 underline mt-1 inline-block"
