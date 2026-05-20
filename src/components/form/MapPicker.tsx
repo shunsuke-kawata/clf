@@ -62,7 +62,7 @@ function FlyToController({
       prevTarget.current?.lng === target.lng
     ) return;
     prevTarget.current = target;
-    map.flyTo([target.lat, target.lng], 17, { duration: 0.8 });
+    map.flyTo([target.lat, target.lng], 19, { duration: 0.8 });
   }, [target, map]);
 
   return null;
@@ -83,8 +83,8 @@ export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Prop
   return (
     <MapContainer
       center={[lat, lng]}
-      zoom={17}
-      className="h-48 w-full rounded-lg"
+      zoom={19}
+      className="h-64 w-full rounded-lg"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
