@@ -57,7 +57,7 @@ export function PricingEditor() {
 
       {open && (
         <div
-          className="fixed inset-0 z-[900] flex items-end"
+          className="fixed inset-0 z-[1001] flex items-end"
           onClick={() => setOpen(false)}
         >
           <div className="absolute inset-0 bg-black/40" />

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const lockerSchema = z.object({
-  name: z.string(),
   lat: z.number(),
   lng: z.number(),
   note: z.string().optional(),
@@ -10,9 +9,8 @@ export const lockerSchema = z.object({
 
 export type LockerInput = z.infer<typeof lockerSchema>;
 
-export type Locker = Omit<LockerInput, "name"> & {
+export type Locker = LockerInput & {
   id: string;
-  name: string | null;
   created_at: string;
   updated_at: string;
 };

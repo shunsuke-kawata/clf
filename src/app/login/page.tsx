@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,13 +20,15 @@ export default function LoginPage() {
       body: JSON.stringify({ password }),
     });
 
-    setLoading(false);
-
     if (res.ok) {
-      router.push("/admin/new");
-    } else {
-      setError("パスワードが違います");
+      // Cookie セット後はソフトナビゲーションではなくフルリロードで遷移する
+      window.location.replace("/admin/new");
+      return;
     }
+
+    logger.warn("[login] auth failed", { status: res.status });
+    setLoading(false);
+    setError("パスワードが違います");
   }
 
   return (
