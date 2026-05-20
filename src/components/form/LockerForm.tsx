@@ -227,7 +227,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
         className="flex flex-col h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto"
       >
         {/* 地図セクション（固定） */}
-        <div className="flex-shrink-0 px-4 pt-4 flex flex-col gap-2">
+        <div className="flex-shrink-0 px-4 pt-2 flex flex-col gap-2">
           {mode === "create" && (
             <div className="flex w-full rounded-lg border border-border overflow-hidden text-sm">
               <button
@@ -255,9 +255,9 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
             </div>
           )}
 
-          <div className="relative h-48 w-full">
+          <div className="relative h-64 w-full">
             {mapKey === 0 ? (
-              <div className="h-48 rounded-lg bg-muted flex items-center justify-center">
+              <div className="h-64 rounded-lg bg-muted flex items-center justify-center">
                 <p className="text-sm text-muted-foreground">地図を読み込み中...</p>
               </div>
             ) : (
