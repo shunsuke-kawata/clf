@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { data, error } = await supabaseReader
     .from("lockers")
     .select(
-      "id, name, lat, lng, note, pricing, created_at, updated_at, locker_photos(id, storage_key, order_index)"
+      "id, lat, lng, note, pricing, created_at, updated_at, locker_photos(id, storage_key, order_index)"
     )
     .eq("id", id)
     .single();
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabaseAdmin
     .from("lockers")
-    .update({ ...parsed.data, name: parsed.data.name || null, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();

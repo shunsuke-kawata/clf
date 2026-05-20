@@ -47,7 +47,6 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
     defaultValues: {
-      name: "",
       lat: 35.6812,
       lng: 139.7671,
       note: "",
@@ -299,18 +298,6 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
         {/* スクロール可能なコンテンツ */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="flex flex-col gap-5 px-4 py-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">場所の名称</label>
-              <input
-                {...register("name")}
-                placeholder="例: 渋谷駅東口コインロッカー"
-                className="rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
-              />
-              {errors.name && (
-                <p className="text-xs text-destructive">{errors.name.message}</p>
-              )}
-            </div>
-
             <PricingEditor />
 
             <div className="flex flex-col gap-1">
