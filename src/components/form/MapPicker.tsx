@@ -70,7 +70,7 @@ function FlyToController({
 type Props = {
   lat: number;
   lng: number;
-  onChange: (lat: number, lng: number) => void;
+  onChange?: (lat: number, lng: number) => void;
   flyTarget?: { lat: number; lng: number } | null;
 };
 
@@ -86,7 +86,7 @@ export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Prop
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapResizer />
-      <ClickHandler onChange={onChange} />
+      {onChange && <ClickHandler onChange={onChange} />}
       <Marker position={[lat, lng]} />
       <FlyToController target={flyTarget} />
     </MapContainer>

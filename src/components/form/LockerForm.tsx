@@ -264,10 +264,10 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
                 key={mapKey}
                 lat={lat}
                 lng={lng}
-                onChange={(newLat, newLng) => {
+                onChange={locationMode === "pin" || mode === "edit" ? (newLat, newLng) => {
                   setValue("lat", newLat, { shouldValidate: true });
                   setValue("lng", newLng, { shouldValidate: true });
-                }}
+                } : undefined}
                 flyTarget={locationMode === "spot" ? flyTarget : null}
               />
             )}
