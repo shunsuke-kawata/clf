@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { lockerSchema, type LockerInput, type Locker } from "@/lib/schemas/locker";
 import { PricingEditor } from "./PricingEditor";
-import { PhotoUploader } from "./PhotoUploader";
+import { PhotoUploader, type PhotoUploaderHandle } from "./PhotoUploader";
 import { Button } from "@/components/ui/button";
 
 const MapPicker = dynamic(() => import("./MapPicker"), {
@@ -39,6 +39,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const [geoError, setGeoError] = useState("");
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
   const [mapKey, setMapKey] = useState(0);
+  const photoRef = useRef<PhotoUploaderHandle>(null);
+  const [photoState, setPhotoState] = useState({ pendingCount: 0, uploading: false });
 
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
@@ -94,17 +96,19 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
 
   async function onSubmit(data: LockerInput) {
     setServerError("");
+
+    if (mode === "create") {
+      // 作成モードでは保存はせず、photoStep に遷移してアップロード/スキップ時に保存する
+      setPhotoStep(true);
+      return;
+    }
+
     setSubmitting(true);
-
-    const url = mode === "create" ? "/api/lockers" : `/api/lockers/${lockerId}`;
-    const method = mode === "create" ? "POST" : "PUT";
-
-    const res = await fetch(url, {
-      method,
+    const res = await fetch(`/api/lockers/${lockerId}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
     setSubmitting(false);
 
     if (!res.ok) {
@@ -113,13 +117,42 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     }
 
     const saved: Locker = await res.json();
+    router.push(`/lockers/${saved.id}`);
+  }
 
-    if (mode === "create") {
+  async function finalizeCreate(withPhotos: boolean) {
+    setServerError("");
+    setSubmitting(true);
+
+    // ロッカー未作成なら作成（リトライ時の重複作成を防ぐため savedId を確認）
+    let targetId = savedId;
+    if (!targetId) {
+      const data = methods.getValues();
+      const res = await fetch("/api/lockers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        setServerError("保存に失敗しました");
+        setSubmitting(false);
+        return;
+      }
+      const saved: Locker = await res.json();
+      targetId = saved.id;
       setSavedId(saved.id);
-      setPhotoStep(true);
-    } else {
-      router.push(`/lockers/${saved.id}`);
     }
+
+    if (withPhotos) {
+      const ok = await photoRef.current?.upload(targetId);
+      if (!ok) {
+        // ロッカーは保存済み。ユーザーがリトライ可能な状態にとどめる
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    router.push("/");
   }
 
   async function handleDelete() {
@@ -134,21 +167,45 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     }
   }
 
-  if (photoStep && savedId) {
+  if (photoStep) {
+    const busy = photoState.uploading || submitting;
     return (
       <div className="flex flex-col h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto">
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-4 py-5">
           <div className="rounded-lg bg-muted p-4 text-sm text-center">
-            ロッカーを保存しました。写真を追加できます（任意）。
+            写真を追加できます（任意）。アップロードまたはスキップで保存します。
           </div>
-          <PhotoUploader lockerId={savedId} onUpload={() => {}} />
+          <PhotoUploader
+            ref={photoRef}
+            lockerId={savedId ?? undefined}
+            controlled
+            onChange={setPhotoState}
+          />
+          {serverError && (
+            <p className="text-sm text-destructive text-center">{serverError}</p>
+          )}
         </div>
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4">
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4 flex flex-col gap-3">
+          {photoState.pendingCount > 0 && (
+            <Button
+              type="button"
+              onClick={() => finalizeCreate(true)}
+              disabled={busy}
+              className="min-h-[44px] w-full"
+            >
+              {busy
+                ? "保存中..."
+                : `${photoState.pendingCount}枚をアップロード`}
+            </Button>
+          )}
           <Button
-            onClick={() => router.push(`/lockers/${savedId}`)}
+            type="button"
+            variant="ghost"
+            onClick={() => finalizeCreate(false)}
+            disabled={busy}
             className="min-h-[44px] w-full"
           >
-            完了
+            {busy && photoState.pendingCount === 0 ? "保存中..." : "スキップ"}
           </Button>
         </div>
       </div>
