@@ -32,12 +32,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ext = file.name.split(".").pop() ?? "jpg";
+  const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const ALLOWED_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"];
+  const ext = ALLOWED_EXTS.includes(rawExt) ? rawExt : "jpg";
   const storageKey = `${lockerId}/${randomUUID()}.${ext}`;
+  const contentType = file.type || "image/jpeg";
 
   let { error: uploadError } = await supabaseAdmin.storage
     .from(BUCKET)
-    .upload(storageKey, file, { contentType: file.type });
+    .upload(storageKey, file, { contentType });
 
   if (uploadError) {
     const msg = uploadError.message.toLowerCase();
@@ -46,7 +49,7 @@ export async function POST(req: NextRequest) {
         await ensureBucket();
         const retry = await supabaseAdmin.storage
           .from(BUCKET)
-          .upload(storageKey, file, { contentType: file.type });
+          .upload(storageKey, file, { contentType });
         uploadError = retry.error;
       } catch (e) {
         logger.error("[photos] bucket creation failed", e);

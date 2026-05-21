@@ -59,42 +59,55 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
         const img = new Image();
         const url = URL.createObjectURL(file);
         img.onload = () => {
-          URL.revokeObjectURL(url);
-          const MAX = 1920;
-          let { width, height } = img;
-          if (width > MAX || height > MAX) {
-            if (width > height) {
-              height = Math.round((height * MAX) / width);
-              width = MAX;
-            } else {
-              width = Math.round((width * MAX) / height);
-              height = MAX;
-            }
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                resolve(file);
-                return;
+          try {
+            URL.revokeObjectURL(url);
+            const MAX = 1920;
+            let { width, height } = img;
+            if (width > MAX || height > MAX) {
+              if (width > height) {
+                height = Math.round((height * MAX) / width);
+                width = MAX;
+              } else {
+                width = Math.round((width * MAX) / height);
+                height = MAX;
               }
-              resolve(
-                new File(
-                  [blob],
-                  file.name.replace(/\.[^.]+$/, ".jpg"),
-                  { type: "image/jpeg" }
-                )
-              );
-            },
-            "image/jpeg",
-            0.85
-          );
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              logger.warn("[PhotoUploader] canvas context unavailable, skipping compression", { name: file.name });
+              resolve(file);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  logger.warn("[PhotoUploader] toBlob returned null, using original file", { name: file.name });
+                  resolve(file);
+                  return;
+                }
+                resolve(
+                  new File(
+                    [blob],
+                    file.name.replace(/\.[^.]+$/, ".jpg"),
+                    { type: "image/jpeg" }
+                  )
+                );
+              },
+              "image/jpeg",
+              0.85
+            );
+          } catch (e) {
+            logger.error("[PhotoUploader] compression failed", e);
+            resolve(file);
+          }
         };
-        img.onerror = () => {
+        img.onerror = (e) => {
           URL.revokeObjectURL(url);
+          logger.warn("[PhotoUploader] failed to load image for compression", { name: file.name, type: file.type, error: e });
           resolve(file);
         };
         img.src = url;
@@ -137,7 +150,13 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
 
       let order = orderOffset;
       for (const p of pending) {
-        const compressed = await compressImage(p.file);
+        let compressed: File;
+        try {
+          compressed = await compressImage(p.file);
+        } catch (e) {
+          logger.error("[PhotoUploader] compressImage threw unexpectedly", e);
+          compressed = p.file;
+        }
         const form = new FormData();
         form.append("file", compressed);
         form.append("locker_id", targetLockerId);
@@ -247,16 +266,16 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
         </div>
 
         {pending.length > 0 && (
-          <div className="relative -mx-4">
+          <div className="relative -mx-4 aspect-[4/3]">
             <div
               ref={scrollRef}
               onScroll={handleScroll}
-              className="flex overflow-x-auto snap-x snap-mandatory aspect-[4/3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {pending.map((p, i) => (
                 <div
                   key={p.id}
-                  className="flex-shrink-0 w-full snap-center relative bg-muted"
+                  className="flex-shrink-0 w-full h-full snap-center relative bg-muted"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
