@@ -1,5 +1,5 @@
 import { supabaseReader } from "@/lib/supabase/server";
-import type { Locker } from "@/lib/schemas/locker";
+import type { Locker } from "@/features/locker/schemas/locker";
 
 export async function getLockers(): Promise<Locker[]> {
   const { data, error } = await supabaseReader

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { LockerForm } from "@/components/form/LockerForm";
-import type { LockerWithPhotos } from "@/lib/schemas/locker";
+import { LockerForm } from "@/features/locker/components/LockerForm";
+import type { LockerWithPhotos } from "@/features/locker/schemas/locker";
 
 type Props = { params: Promise<{ id: string }> };
 

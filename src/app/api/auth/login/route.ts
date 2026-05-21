@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkPassword, setSessionCookies } from "@/lib/auth";
+import { checkPassword, setSessionCookies } from "@/features/auth/lib/auth";
 import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {

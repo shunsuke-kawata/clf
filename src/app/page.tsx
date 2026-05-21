@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { MapViewClient } from "@/components/map/MapViewClient";
-import { getLockers } from "@/lib/data/lockers";
+import { MapViewClient } from "@/features/map/components/MapViewClient";
+import { getLockers } from "@/features/locker/data/lockers";
 
 export const dynamic = "force-dynamic";
 

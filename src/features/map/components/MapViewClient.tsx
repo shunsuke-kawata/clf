@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Component, type ReactNode } from "react";
-import type { Locker } from "@/lib/schemas/locker";
+import type { Locker } from "@/features/locker/schemas/locker";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,

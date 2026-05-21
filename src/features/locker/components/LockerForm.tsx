@@ -6,13 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { lockerSchema, type LockerInput, type Locker } from "@/lib/schemas/locker";
+import { lockerSchema, type LockerInput, type Locker } from "@/features/locker/schemas/locker";
 import { PricingEditor } from "./PricingEditor";
 import { PhotoUploader, type PhotoUploaderHandle } from "./PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
 
-const MapPicker = dynamic(() => import("./MapPicker"), {
+const MapPicker = dynamic(() => import("@/features/map/components/MapPicker"), {
   ssr: false,
   loading: () => (
     <div className="h-48 rounded-lg bg-muted flex items-center justify-center">

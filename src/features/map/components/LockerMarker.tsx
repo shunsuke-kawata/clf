@@ -2,7 +2,7 @@
 
 import { Marker, Popup } from "react-leaflet";
 import Link from "next/link";
-import type { Locker } from "@/lib/schemas/locker";
+import type { Locker } from "@/features/locker/schemas/locker";
 
 type Props = {
   locker: Locker;
