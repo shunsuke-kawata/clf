@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/features/auth/lib/auth";
 import { LockerForm } from "@/features/locker/components/LockerForm";
 
-export default function NewLockerPage() {
+export default async function NewLockerPage() {
+  if (!(await getSession())) {
+    redirect("/login");
+  }
   return (
     <>
       <header className="sticky top-0 z-[800] bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">

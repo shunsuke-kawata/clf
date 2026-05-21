@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 export const ACCESS_COOKIE = "clf_access";
 export const REFRESH_COOKIE = "clf_refresh";
@@ -42,7 +43,8 @@ export function checkPassword(input: string): boolean {
     const b = Buffer.from(password);
     if (a.length !== b.length) return false;
     return timingSafeEqual(a, b);
-  } catch {
+  } catch (e) {
+    logger.error("[auth] checkPassword failed unexpectedly", e);
     return false;
   }
 }
@@ -75,12 +77,24 @@ export async function destroySession(): Promise<void> {
 
 export async function getSession(): Promise<boolean> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(ACCESS_COOKIE)?.value;
-  if (!token) return false;
+
+  const accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
+  if (accessToken) {
+    try {
+      const { payload } = await jwtVerify(accessToken, getSecret());
+      if (payload.sub === ACCESS_COOKIE) return true;
+    } catch (e) {
+      logger.debug("[auth] access token invalid, falling back to refresh token", e);
+    }
+  }
+
+  const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
+  if (!refreshToken) return false;
   try {
-    const { payload } = await jwtVerify(token, getSecret());
-    return payload.sub === ACCESS_COOKIE;
-  } catch {
+    const { payload } = await jwtVerify(refreshToken, getSecret());
+    return payload.sub === REFRESH_COOKIE;
+  } catch (e) {
+    logger.warn("[auth] refresh token invalid or expired", e);
     return false;
   }
 }
