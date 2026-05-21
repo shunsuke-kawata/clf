@@ -133,6 +133,20 @@ pnpm dev      # 開発サーバー起動
 pnpm build    # ビルド
 ```
 
+## コーディング原則
+
+- **DRY**（Don't Repeat Yourself）: 同じロジックを複数箇所に書かない。共通化できるものは関数・コンポーネント・フックに切り出す
+- **KISS**（Keep It Simple, Stupid）: シンプルな実装を優先する。過度な抽象化・汎用化をしない
+- **YAGNI**（You Aren't Gonna Need It）: 今必要でない機能・拡張ポイントは実装しない。将来の要件を先読みしてコードを膨らませない
+
+### SOLID原則
+
+- **Single Responsibility**: 1つのクラス・関数は1つの責務のみを持つ
+- **Open-Closed**: 拡張に対して開き、修正に対して閉じる
+- **Liskov Substitution**: 派生クラスは基底クラスと置換可能であるべき
+- **Interface Segregation**: クライアントが使わないメソッドへの依存を強制しない
+- **Dependency Inversion**: 上位モジュールは下位モジュールに依存せず、抽象に依存する
+
 ## 注意事項
 
 - `lib/supabase/server.ts` はサーバー専用（service_role key）。クライアントからimportしない
