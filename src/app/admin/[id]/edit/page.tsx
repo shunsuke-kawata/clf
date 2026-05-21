@@ -1,26 +1,18 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { getSession } from "@/features/auth/lib/auth";
+import { getLockerById } from "@/features/locker/data/lockers";
 import { LockerForm } from "@/features/locker/components/LockerForm";
-import type { LockerWithPhotos } from "@/features/locker/schemas/locker";
 
 type Props = { params: Promise<{ id: string }> };
 
-async function getLocker(id: string): Promise<LockerWithPhotos | null> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-
-  const res = await fetch(`${baseUrl}/api/lockers/${id}`, { cache: "no-store" });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error("Failed to fetch locker");
-  return res.json();
-}
-
 export default async function EditLockerPage({ params }: Props) {
+  if (!(await getSession())) {
+    redirect("/login");
+  }
+
   const { id } = await params;
-  const locker = await getLocker(id);
+  const locker = await getLockerById(id);
   if (!locker) notFound();
 
   return (
