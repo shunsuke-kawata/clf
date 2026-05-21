@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MapContainer, TileLayer, ZoomControl } from "react-leaflet";
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Locker } from "@/lib/schemas/locker";
@@ -9,6 +9,18 @@ import { LockerMarker } from "./LockerMarker";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
 import { SearchResultMarker } from "./SearchResultMarker";
+
+function MapResizeHandler() {
+  const map = useMap();
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => map.invalidateSize();
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, [map]);
+  return null;
+}
 
 // Leaflet デフォルトアイコン修正（モジュールロード時に即時実行）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,6 +53,7 @@ export default function MapView({ lockers, onMapClick }: Props) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <MapResizeHandler />
       <ZoomControl position="bottomleft" />
       <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
