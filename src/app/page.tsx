@@ -1,18 +1,8 @@
 import Link from "next/link";
-import type { Locker } from "@/lib/schemas/locker";
 import { MapViewClient } from "@/components/map/MapViewClient";
+import { getLockers } from "@/lib/data/lockers";
 
-async function getLockers(): Promise<Locker[]> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-
-  const res = await fetch(`${baseUrl}/api/lockers`, { cache: "no-store" });
-  if (!res.ok) return [];
-  return res.json();
-}
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const lockers = await getLockers();
