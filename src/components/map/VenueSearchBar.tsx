@@ -139,7 +139,7 @@ export function VenueSearchBar({ onResult }: Props) {
             }}
             onFocus={() => suggestions.length > 0 && setOpen(true)}
             placeholder="会場名・駅名で検索"
-            className="flex-1 bg-transparent text-sm outline-none text-gray-800 placeholder:text-gray-400 min-w-0"
+            className="flex-1 bg-transparent text-base outline-none text-gray-800 placeholder:text-gray-400 min-w-0"
             autoComplete="off"
           />
           {loading ? (
