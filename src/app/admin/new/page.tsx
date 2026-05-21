@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LockerForm } from "@/components/form/LockerForm";
+import { LockerForm } from "@/features/locker/components/LockerForm";
 
 export default function NewLockerPage() {
   return (

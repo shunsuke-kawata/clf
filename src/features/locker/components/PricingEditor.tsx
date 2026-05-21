@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import type { LockerInput } from "@/lib/schemas/locker";
+import type { LockerInput } from "@/features/locker/schemas/locker";
 
 const PRICE_OPTIONS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 

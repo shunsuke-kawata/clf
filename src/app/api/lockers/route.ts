@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseReader, supabaseAdmin } from "@/lib/supabase/server";
-import { lockerSchema } from "@/lib/schemas/locker";
+import { lockerSchema } from "@/features/locker/schemas/locker";
 import { logger } from "@/lib/logger";
 
 export async function GET() {

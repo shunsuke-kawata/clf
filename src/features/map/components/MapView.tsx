@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import type { Locker } from "@/lib/schemas/locker";
+import type { Locker } from "@/features/locker/schemas/locker";
 import { LockerMarker } from "./LockerMarker";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";

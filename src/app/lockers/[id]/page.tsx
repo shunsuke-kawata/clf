@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import type { LockerWithPhotos } from "@/lib/schemas/locker";
+import type { LockerWithPhotos } from "@/features/locker/schemas/locker";
 import { getPhotoUrl } from "@/lib/utils/photo";
 
 type Props = { params: Promise<{ id: string }> };
