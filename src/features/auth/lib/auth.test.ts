@@ -25,7 +25,7 @@ import {
 // vitest.config.ts の test.env で SESSION_SECRET を設定済みなので
 // getSecret() は process.env.SESSION_SECRET を読み取れる
 const SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET ?? "test-session-secret-for-vitest"
+  process.env.SESSION_SECRET ?? "test-session-secret-for-vitest-ok"
 );
 
 /** テスト用 JWT を生成するヘルパー */

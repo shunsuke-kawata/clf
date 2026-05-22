@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
 import { API_ROUTES, PAGE_ROUTES } from "@/lib/routes";
 import { APP_CONFIG } from "@/lib/config";
+import { usePreventIOSZoom } from "@/hooks/usePreventIOSZoom";
 
 const MapPicker = dynamic(() => import("@/features/map/components/MapPicker"), {
   ssr: false,
@@ -34,6 +35,7 @@ type Props = {
 
 export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const router = useRouter();
+  usePreventIOSZoom();
   const [savedId, setSavedId] = useState<string | null>(lockerId ?? null);
   const [photoStep, setPhotoStep] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -198,8 +200,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   if (photoStep) {
     const busy = photoState.uploading || submitting;
     return (
-      <div className="flex flex-col h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto">
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-4 py-5">
+      <div className="flex flex-col min-h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto">
+        <div className="flex flex-col gap-5 px-4 py-5 flex-1">
           <div className="rounded-lg bg-muted p-4 text-sm text-center">
             写真を追加できます（任意）。アップロードまたはスキップで保存します。
           </div>
@@ -213,7 +215,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
             <p className="text-sm text-destructive text-center">{serverError}</p>
           )}
         </div>
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4 flex flex-col gap-3">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4 flex flex-col gap-3">
           {photoState.pendingCount > 0 && (
             <Button
               type="button"
@@ -244,7 +246,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     <FormProvider {...methods}>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto"
+        className="flex flex-col min-h-[calc(100dvh-3.5rem)] w-full max-w-lg mx-auto"
       >
         {/* 地図セクション（固定） */}
         <div className="flex-shrink-0 px-4 pt-2 flex flex-col gap-2">
@@ -316,8 +318,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           </p>
         </div>
 
-        {/* スクロール可能なコンテンツ */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* コンテンツ（ページ自体がスクロールするため overflow-y-auto 不要） */}
+        <div className="flex-1">
           <div className="flex flex-col gap-5 px-4 py-4">
             <PricingEditor />
 
@@ -327,7 +329,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
                 {...register("note")}
                 placeholder="混雑状況・アクセスメモなど"
                 rows={3}
-                className="w-full rounded-md border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
+                className="w-full rounded-md border border-input bg-background px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-ring resize-none"
               />
             </div>
 
@@ -341,8 +343,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
           </div>
         </div>
 
-        {/* ボタン（固定） */}
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4 flex flex-col gap-3">
+        {/* ボタン（ページスクロール時も画面下部に固定） */}
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t pt-4 pb-6 px-4 flex flex-col gap-3">
           <Button type="submit" disabled={submitting} className="min-h-[44px]">
             {submitting ? "保存中..." : mode === "create" ? "次へ（写真を追加）" : "更新する"}
           </Button>
