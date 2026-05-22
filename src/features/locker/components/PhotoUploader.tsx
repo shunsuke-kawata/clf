@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { API_ROUTES } from "@/lib/routes";
 
 type PendingPhoto = {
   id: string;
@@ -148,46 +149,52 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
       setError("");
       setUploading(true);
 
-      let order = orderOffset;
-      for (const p of pending) {
-        let compressed: File;
-        try {
-          compressed = await compressImage(p.file);
-        } catch (e) {
-          logger.error("[PhotoUploader] compressImage threw unexpectedly", e);
-          compressed = p.file;
-        }
-        const form = new FormData();
-        form.append("file", compressed);
-        form.append("locker_id", targetLockerId);
-        form.append("order_index", String(order++));
+      try {
+        let order = orderOffset;
+        for (const p of pending) {
+          let compressed: File;
+          try {
+            compressed = await compressImage(p.file);
+          } catch (e) {
+            logger.error("[PhotoUploader] compressImage threw unexpectedly", e);
+            compressed = p.file;
+          }
+          const form = new FormData();
+          form.append("file", compressed);
+          form.append("locker_id", targetLockerId);
+          form.append("order_index", String(order++));
 
-        const res = await fetch("/api/photos", {
-          method: "POST",
-          body: form,
-        });
-        if (!res.ok) {
-          const body = (await res
-            .json()
-            .catch(() => ({}))) as { error?: string };
-          logger.error("[PhotoUploader] upload failed", {
-            status: res.status,
-            error: body.error,
+          const res = await fetch(API_ROUTES.photos.upload, {
+            method: "POST",
+            body: form,
           });
-          setError(body.error ?? "アップロードに失敗しました");
-          setUploading(false);
-          return false;
+          if (!res.ok) {
+            const body = (await res
+              .json()
+              .catch(() => ({}))) as { error?: string };
+            logger.error("[PhotoUploader] upload failed", {
+              status: res.status,
+              error: body.error,
+            });
+            setError(body.error ?? "アップロードに失敗しました");
+            return false;
+          }
+          const photo: UploadedPhoto = await res.json();
+          onUpload?.(photo);
         }
-        const photo: UploadedPhoto = await res.json();
-        onUpload?.(photo);
-      }
 
-      pending.forEach((p) => URL.revokeObjectURL(p.previewUrl));
-      setOrderOffset(order);
-      setPending([]);
-      setCurrentIndex(0);
-      setUploading(false);
-      return true;
+        pending.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        setOrderOffset(order);
+        setPending([]);
+        setCurrentIndex(0);
+        return true;
+      } catch (e) {
+        logger.error("[PhotoUploader] upload threw", e);
+        setError("アップロードに失敗しました");
+        return false;
+      } finally {
+        setUploading(false);
+      }
     }
 
     useImperativeHandle(

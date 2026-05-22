@@ -114,6 +114,15 @@ Nominatim API（無料・APIキー不要）を `/api/geocode` 経由で呼び出
 - **作業開始前に必ず Notion Issue と GitHub Issue を作成してからブランチを切る**（/start-task スキルを使う）
 - リポジトリ: https://github.com/shunsuke-kawata/clf
 
+## Git 操作ルール（厳守）
+
+**`git commit` / `git push` はユーザーが明示的に指示した場合のみ実行する。**
+
+- 実装完了後は変更内容を報告し、コミット・push の指示を待つ
+- 「タスクを進めてください」「自動で進めてください」などの指示はコミット・push の許可を含まない
+- PR 作成もユーザーの指示があるまで行わない
+- いかなる状況でも無断でコミット・push・PR 作成を行わないこと
+
 ## GitHub 操作
 
 GitHub MCP はこのプロジェクトで Issue 作成の権限がない。**GitHub への書き込み操作は常に `gh` CLI を使うこと。**
@@ -129,9 +138,43 @@ gh pr create --base develop --title "..." --body "..."
 ## コマンド
 
 ```bash
-pnpm dev      # 開発サーバー起動
-pnpm build    # ビルド
+pnpm dev        # 開発サーバー起動
+pnpm build      # ビルド
+pnpm test       # テスト（watch モード）
+pnpm test:run   # テスト（一回実行）
 ```
+
+## テスト方針
+
+テストフレームワークは **Vitest v2 + happy-dom**。
+
+### 新規機能を実装するときのルール
+
+**純粋なロジックを含む実装には必ずテストを追加する。**
+
+| 対象 | テストの要否 |
+|------|-------------|
+| Zod スキーマ | **必須**（バリデーション境界値を網羅する） |
+| 認証ロジック（JWT・パスワード検証） | **必須** |
+| API Route Handler | **必須**（正常系・バリデーション失敗・DB エラーの3軸） |
+| 純粋関数（utils など） | **必須** |
+| Leaflet/地図コンポーネント | 不要（jsdom では動作不安定のため対象外） |
+| UI コンポーネント全般 | 原則不要（E2E の領域） |
+
+### テストファイルの置き場
+
+ソースファイルの隣にコロケーションで配置する。
+
+```
+src/features/locker/schemas/locker.ts
+src/features/locker/schemas/locker.test.ts  ← 隣に置く
+```
+
+### モックの方針
+
+- `next/headers`（cookies）: `vitest.setup.ts` でグローバルにモック済み
+- Supabase クライアント: `vi.hoisted` + `vi.mock("@/lib/supabase/server")` でテストファイル内でモックする
+- jose（JWT）: モックせず実際の JWT を生成してテストする
 
 ## コーディング原則
 

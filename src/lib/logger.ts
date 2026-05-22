@@ -1,3 +1,5 @@
+import { APP_CONFIG } from "@/lib/config";
+
 type Level = "debug" | "info" | "warn" | "error";
 
 const LEVEL_ORDER: Record<Level, number> = {
@@ -7,17 +9,8 @@ const LEVEL_ORDER: Record<Level, number> = {
   error: 3,
 };
 
-function resolveCurrentLevel(): number {
-  // クライアントは NEXT_PUBLIC_LOG_LEVEL のみ参照可能
-  const raw =
-    process.env.NEXT_PUBLIC_LOG_LEVEL?.toLowerCase() ??
-    process.env.LOG_LEVEL?.toLowerCase() ??
-    (process.env.NODE_ENV === "production" ? "info" : "debug");
-  return LEVEL_ORDER[raw as Level] ?? LEVEL_ORDER.info;
-}
-
-const currentLevel = resolveCurrentLevel();
-const isProd = process.env.NODE_ENV === "production";
+const currentLevel = LEVEL_ORDER[APP_CONFIG.log.level as Level] ?? LEVEL_ORDER.info;
+const isProd = APP_CONFIG.isProd;
 
 function serializeMeta(meta: unknown): Record<string, unknown> {
   if (meta === undefined) return {};
