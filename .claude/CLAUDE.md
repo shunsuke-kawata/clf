@@ -138,9 +138,43 @@ gh pr create --base develop --title "..." --body "..."
 ## コマンド
 
 ```bash
-pnpm dev      # 開発サーバー起動
-pnpm build    # ビルド
+pnpm dev        # 開発サーバー起動
+pnpm build      # ビルド
+pnpm test       # テスト（watch モード）
+pnpm test:run   # テスト（一回実行）
 ```
+
+## テスト方針
+
+テストフレームワークは **Vitest v2 + happy-dom**。
+
+### 新規機能を実装するときのルール
+
+**純粋なロジックを含む実装には必ずテストを追加する。**
+
+| 対象 | テストの要否 |
+|------|-------------|
+| Zod スキーマ | **必須**（バリデーション境界値を網羅する） |
+| 認証ロジック（JWT・パスワード検証） | **必須** |
+| API Route Handler | **必須**（正常系・バリデーション失敗・DB エラーの3軸） |
+| 純粋関数（utils など） | **必須** |
+| Leaflet/地図コンポーネント | 不要（jsdom では動作不安定のため対象外） |
+| UI コンポーネント全般 | 原則不要（E2E の領域） |
+
+### テストファイルの置き場
+
+ソースファイルの隣にコロケーションで配置する。
+
+```
+src/features/locker/schemas/locker.ts
+src/features/locker/schemas/locker.test.ts  ← 隣に置く
+```
+
+### モックの方針
+
+- `next/headers`（cookies）: `vitest.setup.ts` でグローバルにモック済み
+- Supabase クライアント: `vi.hoisted` + `vi.mock("@/lib/supabase/server")` でテストファイル内でモックする
+- jose（JWT）: モックせず実際の JWT を生成してテストする
 
 ## コーディング原則
 
