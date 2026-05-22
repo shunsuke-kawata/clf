@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Locker } from "@/features/locker/schemas/locker";
+import { logger } from "@/lib/logger";
 import { LockerMarker } from "./LockerMarker";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
@@ -16,6 +17,61 @@ function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
     map.flyTo([lat, lng], 17, { duration: 1.5 });
   }, [map, lat, lng]);
   return null;
+}
+
+function CurrentLocationButton() {
+  const map = useMap();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    L.DomEvent.disableClickPropagation(containerRef.current);
+    L.DomEvent.disableScrollPropagation(containerRef.current);
+  }, []);
+
+  async function handleClick() {
+    if (!navigator.geolocation) {
+      logger.warn("[CurrentLocationButton] geolocation not supported");
+      return;
+    }
+    setLoading(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+      );
+      map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { duration: 1.5 });
+    } catch (e) {
+      logger.warn("[CurrentLocationButton] geolocation failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="absolute bottom-24 right-4 z-[1000]">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        aria-label="現在地に戻る"
+        className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 disabled:opacity-50 active:scale-95 transition-transform"
+      >
+        {loading ? (
+          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" strokeWidth="2" />
+            <path strokeLinecap="round" strokeWidth="2" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            <circle cx="12" cy="12" r="8" strokeWidth="2" strokeDasharray="4 2" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
 }
 
 function MapResizeHandler() {
@@ -64,6 +120,7 @@ export default function MapView({ lockers, onMapClick, flyTo }: Props) {
       />
       <MapResizeHandler />
       <ZoomControl position="bottomleft" />
+      <CurrentLocationButton />
       <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
