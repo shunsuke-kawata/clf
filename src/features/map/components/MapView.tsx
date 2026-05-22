@@ -10,6 +10,14 @@ import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
 import { SearchResultMarker } from "./SearchResultMarker";
 
+function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([lat, lng], 17, { duration: 1.5 });
+  }, [map, lat, lng]);
+  return null;
+}
+
 function MapResizeHandler() {
   const map = useMap();
   useEffect(() => {
@@ -35,11 +43,12 @@ L.Icon.Default.mergeOptions({
 type Props = {
   lockers: Locker[];
   onMapClick?: (lat: number, lng: number) => void;
+  flyTo?: { lat: number; lng: number } | null;
 };
 
 type SearchPin = { lat: number; lng: number; name: string };
 
-export default function MapView({ lockers, onMapClick }: Props) {
+export default function MapView({ lockers, onMapClick, flyTo }: Props) {
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
 
   return (
@@ -57,6 +66,7 @@ export default function MapView({ lockers, onMapClick }: Props) {
       <ZoomControl position="bottomleft" />
       <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+      {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
       {lockers.map((locker) => (
         <LockerMarker key={locker.id} locker={locker} />
       ))}

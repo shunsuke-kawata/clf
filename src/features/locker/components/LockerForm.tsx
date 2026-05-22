@@ -164,7 +164,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       }
 
       toast.success("コインロッカーを登録しました");
-      router.push("/");
+      const { lat, lng } = methods.getValues();
+      router.push(`/?lat=${lat}&lng=${lng}`);
     } catch (e) {
       logger.error("[LockerForm] finalizeCreate threw", e);
       setServerError("保存に失敗しました");
