@@ -72,6 +72,23 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   async function fetchCurrentLocation() {
     setGeoState("loading");
     setGeoError("");
+
+    if (!window.isSecureContext) {
+      logger.warn("[LockerForm] geolocation unavailable: insecure context (HTTP + non-localhost)");
+      setGeoError("HTTPSでない接続では現在地を取得できません。地図から場所を指定してください。");
+      setGeoState("error");
+      setLocationMode("pin");
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      logger.warn("[LockerForm] geolocation unavailable: API not supported");
+      setGeoError("このブラウザは位置情報に対応していません。地図から場所を指定してください。");
+      setGeoState("error");
+      setLocationMode("pin");
+      return;
+    }
+
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
