@@ -79,7 +79,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       setValue("lng", longitude, { shouldValidate: true });
       setFlyTarget({ lat: latitude, lng: longitude });
       setGeoState("ok");
-    } catch {
+    } catch (e) {
+      logger.warn("[LockerForm] geolocation failed", e);
       setGeoError("現在地を取得できませんでした。位置情報の許可を確認してください。");
       setGeoState("error");
     }
@@ -105,71 +106,88 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     }
 
     setSubmitting(true);
-    const res = await fetch(`/api/lockers/${lockerId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    setSubmitting(false);
-
-    if (!res.ok) {
-      logger.error("[LockerForm] update failed", { id: lockerId, status: res.status });
+    try {
+      const res = await fetch(`/api/lockers/${lockerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        logger.error("[LockerForm] update failed", { id: lockerId, status: res.status, error: body.error });
+        setServerError(body.error ?? "保存に失敗しました");
+        return;
+      }
+      const saved: Locker = await res.json();
+      router.push(`/lockers/${saved.id}`);
+    } catch (e) {
+      logger.error("[LockerForm] update threw", e);
       setServerError("保存に失敗しました");
-      return;
+    } finally {
+      setSubmitting(false);
     }
-
-    const saved: Locker = await res.json();
-    router.push(`/lockers/${saved.id}`);
   }
 
   async function finalizeCreate(withPhotos: boolean) {
     setServerError("");
     setSubmitting(true);
 
-    // ロッカー未作成なら作成（リトライ時の重複作成を防ぐため savedId を確認）
-    let targetId = savedId;
-    if (!targetId) {
-      const data = methods.getValues();
-      const res = await fetch("/api/lockers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        logger.error("[LockerForm] create failed", { status: res.status });
-        toast.error("登録に失敗しました");
-        setServerError("保存に失敗しました");
-        setSubmitting(false);
-        return;
+    try {
+      // ロッカー未作成なら作成（リトライ時の重複作成を防ぐため savedId を確認）
+      let targetId = savedId;
+      if (!targetId) {
+        const data = methods.getValues();
+        const res = await fetch("/api/lockers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          logger.error("[LockerForm] create failed", { status: res.status, error: body.error });
+          toast.error("登録に失敗しました");
+          setServerError(body.error ?? "保存に失敗しました");
+          return;
+        }
+        const saved: Locker = await res.json();
+        targetId = saved.id;
+        setSavedId(saved.id);
       }
-      const saved: Locker = await res.json();
-      targetId = saved.id;
-      setSavedId(saved.id);
-    }
 
-    if (withPhotos) {
-      const ok = await photoRef.current?.upload(targetId);
-      if (!ok) {
-        // ロッカーは保存済み。ユーザーがリトライ可能な状態にとどめる
-        logger.warn("[LockerForm] photo upload failed, locker saved", { id: targetId });
-        setSubmitting(false);
-        return;
+      if (withPhotos) {
+        const ok = await photoRef.current?.upload(targetId);
+        if (!ok) {
+          // ロッカーは保存済み。ユーザーがリトライ可能な状態にとどめる
+          logger.warn("[LockerForm] photo upload failed, locker saved", { id: targetId });
+          return;
+        }
       }
-    }
 
-    toast.success("コインロッカーを登録しました");
-    router.push("/");
+      toast.success("コインロッカーを登録しました");
+      router.push("/");
+    } catch (e) {
+      logger.error("[LockerForm] finalizeCreate threw", e);
+      setServerError("保存に失敗しました");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleDelete() {
     if (!lockerId) return;
     if (!confirm("削除しますか？")) return;
 
-    const res = await fetch(`/api/lockers/${lockerId}`, { method: "DELETE" });
-    if (res.ok) {
-      router.push("/");
-    } else {
-      logger.error("[LockerForm] delete failed", { id: lockerId, status: res.status });
+    try {
+      const res = await fetch(`/api/lockers/${lockerId}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/");
+      } else {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        logger.error("[LockerForm] delete failed", { id: lockerId, status: res.status, error: body.error });
+        setServerError(body.error ?? "削除に失敗しました");
+      }
+    } catch (e) {
+      logger.error("[LockerForm] delete threw", e);
       setServerError("削除に失敗しました");
     }
   }
