@@ -1,29 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import type { LockerWithPhotos } from "@/features/locker/schemas/locker";
+import { getLockerById } from "@/features/locker/data/lockers";
 import { getPhotoUrl } from "@/lib/utils/photo";
+import { serverEnv } from "@/lib/env";
 
 type Props = { params: Promise<{ id: string }> };
 
-async function getLocker(id: string): Promise<LockerWithPhotos | null> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-
-  const res = await fetch(`${baseUrl}/api/lockers/${id}`, { cache: "no-store" });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error("Failed to fetch locker");
-  return res.json();
-}
-
 export default async function LockerDetailPage({ params }: Props) {
   const { id } = await params;
-  const locker = await getLocker(id);
+  const locker = await getLockerById(id);
   if (!locker) notFound();
 
-  const supabaseUrl = process.env.SUPABASE_URL ?? "";
+  const supabaseUrl = serverEnv.SUPABASE_URL;
   const photos = (locker.locker_photos ?? []).sort((a, b) => a.order_index - b.order_index);
 
   return (

@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
+import { serverEnv } from "@/lib/env";
 
 export const ACCESS_COOKIE = "clf_access";
 export const REFRESH_COOKIE = "clf_refresh";
@@ -11,15 +12,13 @@ const ACCESS_MAX_AGE = 60 * 15; // 15分
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30日
 
 function getSecret(): Uint8Array {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) throw new Error("SESSION_SECRET must be set");
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(serverEnv.SESSION_SECRET);
 }
 
 function cookieOptions(maxAge: number) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: serverEnv.NODE_ENV === "production",
     sameSite: "lax" as const,
     maxAge,
     path: "/",
@@ -36,8 +35,7 @@ async function issueJwt(subject: string, expiresIn: string): Promise<string> {
 }
 
 export function checkPassword(input: string): boolean {
-  const password = process.env.APP_PASSWORD;
-  if (!password) throw new Error("APP_PASSWORD must be set");
+  const password = serverEnv.APP_PASSWORD;
   try {
     const a = Buffer.from(input);
     const b = Buffer.from(password);

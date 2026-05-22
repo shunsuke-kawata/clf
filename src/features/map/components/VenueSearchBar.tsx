@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 import { logger } from "@/lib/logger";
+import { API_ROUTES } from "@/lib/routes";
 
 type SearchResult = {
   lat: string;
@@ -43,7 +44,7 @@ export function VenueSearchBar({ onResult }: Props) {
       return;
     }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query.trim())}`);
+      const res = await fetch(API_ROUTES.geocode.search(query.trim()));
       if (!res.ok) {
         logger.warn("[VenueSearchBar] suggest failed", { status: res.status });
         return;
@@ -74,7 +75,7 @@ export function VenueSearchBar({ onResult }: Props) {
     let results = suggestions;
     if (results.length === 0) {
       setLoading(true);
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query.trim())}`);
+      const res = await fetch(API_ROUTES.geocode.search(query.trim()));
       setLoading(false);
       if (!res.ok) {
         logger.error("[VenueSearchBar] search failed", { status: res.status });

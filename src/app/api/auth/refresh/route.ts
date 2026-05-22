@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 import { logger } from "@/lib/logger";
+import { serverEnv } from "@/lib/env";
 
 const ACCESS_COOKIE = "clf_access";
 const REFRESH_COOKIE = "clf_refresh";
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    logger.error("[auth/refresh] SESSION_SECRET is not set");
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-
-  const secretBytes = new TextEncoder().encode(secret);
+  const secretBytes = new TextEncoder().encode(serverEnv.SESSION_SECRET);
   const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value ?? "";
 
   try {
@@ -33,7 +28,7 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(ACCESS_COOKIE, newAccessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: serverEnv.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 15,
     path: "/",

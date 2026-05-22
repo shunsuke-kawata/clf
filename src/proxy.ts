@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
+import { serverEnv } from "@/lib/env";
 
 const ACCESS_COOKIE = "clf_access";
 const REFRESH_COOKIE = "clf_refresh";
 const ACCESS_MAX_AGE = 60 * 15; // 15分
 
 function getSecret(): Uint8Array {
-  const secret = process.env.SESSION_SECRET ?? "";
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(serverEnv.SESSION_SECRET);
 }
 
 async function verifyToken(token: string, subject: string): Promise<boolean> {
-  if (!token || !process.env.SESSION_SECRET) return false;
+  if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return payload.sub === subject;
