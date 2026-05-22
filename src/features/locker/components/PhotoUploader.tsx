@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { API_ROUTES } from "@/lib/routes";
 
 type PendingPhoto = {
   id: string;
@@ -163,7 +164,7 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
           form.append("locker_id", targetLockerId);
           form.append("order_index", String(order++));
 
-          const res = await fetch("/api/photos", {
+          const res = await fetch(API_ROUTES.photos.upload, {
             method: "POST",
             body: form,
           });

@@ -11,6 +11,8 @@ import { PricingEditor } from "./PricingEditor";
 import { PhotoUploader, type PhotoUploaderHandle } from "./PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { API_ROUTES, PAGE_ROUTES } from "@/lib/routes";
+import { APP_CONFIG } from "@/lib/config";
 
 const MapPicker = dynamic(() => import("@/features/map/components/MapPicker"), {
   ssr: false,
@@ -47,8 +49,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
   const methods = useForm<LockerInput>({
     resolver: zodResolver(lockerSchema),
     defaultValues: {
-      lat: 35.6812,
-      lng: 139.7671,
+      lat: APP_CONFIG.map.defaultCenter.lat,
+      lng: APP_CONFIG.map.defaultCenter.lng,
       note: "",
       pricing: [],
       ...defaultValues,
@@ -72,7 +74,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     setGeoError("");
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
       );
       const { latitude, longitude } = pos.coords;
       setValue("lat", latitude, { shouldValidate: true });
@@ -107,7 +109,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/lockers/${lockerId}`, {
+      const res = await fetch(API_ROUTES.lockers.update(lockerId!), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -137,7 +139,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       let targetId = savedId;
       if (!targetId) {
         const data = methods.getValues();
-        const res = await fetch("/api/lockers", {
+        const res = await fetch(API_ROUTES.lockers.create, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
@@ -165,7 +167,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
 
       toast.success("コインロッカーを登録しました");
       const { lat, lng } = methods.getValues();
-      router.push(`/?lat=${lat}&lng=${lng}`);
+      router.push(`${PAGE_ROUTES.home}?lat=${lat}&lng=${lng}`);
     } catch (e) {
       logger.error("[LockerForm] finalizeCreate threw", e);
       setServerError("保存に失敗しました");
@@ -179,7 +181,7 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     if (!confirm("削除しますか？")) return;
 
     try {
-      const res = await fetch(`/api/lockers/${lockerId}`, { method: "DELETE" });
+      const res = await fetch(API_ROUTES.lockers.delete(lockerId), { method: "DELETE" });
       if (res.ok) {
         router.push("/");
       } else {
