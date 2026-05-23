@@ -5,16 +5,12 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-lea
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { APP_CONFIG } from "@/lib/config";
 
 // Leaflet デフォルトアイコン修正（モジュールロード時に即時実行）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+L.Icon.Default.mergeOptions(APP_CONFIG.map.leafletIcons);
 
 function ClickHandler({
   onChange,
@@ -82,8 +78,8 @@ export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Prop
       className="h-64 w-full rounded-lg"
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={APP_CONFIG.map.tileAttribution}
+        url={APP_CONFIG.map.tileUrl}
       />
       <MapResizer />
       {onChange && <ClickHandler onChange={onChange} />}
