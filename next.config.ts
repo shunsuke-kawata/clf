@@ -8,7 +8,8 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   // 地図タイル・Leaflet アイコン（unpkg.com）・Supabase Storage 写真
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.supabase.co",
+  // 開発時はローカル Supabase（127.0.0.1:54321）も許可
+  `img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.supabase.co${isDev ? " http://127.0.0.1:54321" : ""}`,
   // Nominatim・Supabase はすべて API Route 経由のためサーバー側のみ
   "connect-src 'self'",
   "font-src 'self'",
@@ -28,6 +29,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["172.20.10.3"],
   async headers() {
     return [
       {

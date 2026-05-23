@@ -7,6 +7,7 @@ import L from "leaflet";
 import type { Locker } from "@/features/locker/schemas/locker";
 import { logger } from "@/lib/logger";
 import { LockerMarker } from "./LockerMarker";
+import { LockerBottomSheet } from "./LockerBottomSheet";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
 import { SearchResultMarker } from "./SearchResultMarker";
@@ -98,36 +99,49 @@ L.Icon.Default.mergeOptions({
 
 type Props = {
   lockers: Locker[];
+  supabaseUrl: string;
   onMapClick?: (lat: number, lng: number) => void;
   flyTo?: { lat: number; lng: number } | null;
 };
 
 type SearchPin = { lat: number; lng: number; name: string };
 
-export default function MapView({ lockers, onMapClick, flyTo }: Props) {
+export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Props) {
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
+  const [selectedLockerId, setSelectedLockerId] = useState<string | null>(null);
 
   return (
-    <MapContainer
-      center={[35.6812, 139.7671]} // 東京駅
-      zoom={13}
-      className="h-dvh w-full"
-      zoomControl={false}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <>
+      <MapContainer
+        center={[35.6812, 139.7671]} // 東京駅
+        zoom={13}
+        className="h-dvh w-full"
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapResizeHandler />
+        <ZoomControl position="bottomleft" />
+        <CurrentLocationButton />
+        <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
+        {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+        {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
+        {lockers.map((locker) => (
+          <LockerMarker
+            key={locker.id}
+            locker={locker}
+            onSelect={setSelectedLockerId}
+          />
+        ))}
+        {searchPin && <SearchResultMarker {...searchPin} />}
+      </MapContainer>
+      <LockerBottomSheet
+        lockerId={selectedLockerId}
+        supabaseUrl={supabaseUrl}
+        onClose={() => setSelectedLockerId(null)}
       />
-      <MapResizeHandler />
-      <ZoomControl position="bottomleft" />
-      <CurrentLocationButton />
-      <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
-      {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
-      {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
-      {lockers.map((locker) => (
-        <LockerMarker key={locker.id} locker={locker} />
-      ))}
-      {searchPin && <SearchResultMarker {...searchPin} />}
-    </MapContainer>
+    </>
   );
 }
