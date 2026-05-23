@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { randomUUID } from "crypto";
+import { APP_CONFIG } from "@/lib/config";
 
-const BUCKET = "locker-photos";
+const BUCKET = APP_CONFIG.photo.bucket;
 
 async function ensureBucket(): Promise<void> {
   const { error } = await supabaseAdmin.storage.createBucket(BUCKET, {
     public: true,
-    fileSizeLimit: 10 * 1024 * 1024,
+    fileSizeLimit: APP_CONFIG.photo.maxFileSizeBytes,
   });
   if (error && !error.message.toLowerCase().includes("already exists")) {
     throw error;
@@ -33,8 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const ALLOWED_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"];
-  const ext = ALLOWED_EXTS.includes(rawExt) ? rawExt : "jpg";
+  const ext = APP_CONFIG.photo.allowedExtensions.includes(rawExt) ? rawExt : "jpg";
   const storageKey = `${lockerId}/${randomUUID()}.${ext}`;
   const contentType = file.type || "image/jpeg";
 
@@ -74,5 +74,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  logger.info("[photos] uploaded", { id: data.id, lockerId, storageKey });
   return NextResponse.json(data, { status: 201 });
 }

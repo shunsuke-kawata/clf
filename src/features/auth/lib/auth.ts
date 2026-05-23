@@ -4,12 +4,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { serverEnv } from "@/lib/env";
+import { APP_CONFIG } from "@/lib/config";
 
 export const ACCESS_COOKIE = "clf_access";
 export const REFRESH_COOKIE = "clf_refresh";
-
-const ACCESS_MAX_AGE = 60 * 15; // 15分
-const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30日
 
 function getSecret(): Uint8Array {
   return new TextEncoder().encode(serverEnv.SESSION_SECRET);
@@ -49,28 +47,30 @@ export function checkPassword(input: string): boolean {
 
 export async function createSession(): Promise<void> {
   const [accessToken, refreshToken] = await Promise.all([
-    issueJwt(ACCESS_COOKIE, "15m"),
-    issueJwt(REFRESH_COOKIE, "30d"),
+    issueJwt(ACCESS_COOKIE, APP_CONFIG.auth.accessTokenExpiry),
+    issueJwt(REFRESH_COOKIE, APP_CONFIG.auth.refreshTokenExpiry),
   ]);
   const cookieStore = await cookies();
-  cookieStore.set(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_MAX_AGE));
-  cookieStore.set(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_MAX_AGE));
+  cookieStore.set(ACCESS_COOKIE, accessToken, cookieOptions(APP_CONFIG.auth.accessMaxAge));
+  cookieStore.set(REFRESH_COOKIE, refreshToken, cookieOptions(APP_CONFIG.auth.refreshMaxAge));
+  logger.info("[auth] session created");
 }
 
 // Route Handler から呼ぶ場合は response.cookies に直接セットする
 export async function setSessionCookies(res: NextResponse): Promise<void> {
   const [accessToken, refreshToken] = await Promise.all([
-    issueJwt(ACCESS_COOKIE, "15m"),
-    issueJwt(REFRESH_COOKIE, "30d"),
+    issueJwt(ACCESS_COOKIE, APP_CONFIG.auth.accessTokenExpiry),
+    issueJwt(REFRESH_COOKIE, APP_CONFIG.auth.refreshTokenExpiry),
   ]);
-  res.cookies.set(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_MAX_AGE));
-  res.cookies.set(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_MAX_AGE));
+  res.cookies.set(ACCESS_COOKIE, accessToken, cookieOptions(APP_CONFIG.auth.accessMaxAge));
+  res.cookies.set(REFRESH_COOKIE, refreshToken, cookieOptions(APP_CONFIG.auth.refreshMaxAge));
 }
 
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(ACCESS_COOKIE);
   cookieStore.delete(REFRESH_COOKIE);
+  logger.info("[auth] session destroyed");
 }
 
 export async function getSession(): Promise<boolean> {
@@ -80,7 +80,10 @@ export async function getSession(): Promise<boolean> {
   if (accessToken) {
     try {
       const { payload } = await jwtVerify(accessToken, getSecret());
-      if (payload.sub === ACCESS_COOKIE) return true;
+      if (payload.sub === ACCESS_COOKIE) {
+        logger.info("[auth] session valid via access token");
+        return true;
+      }
     } catch (e) {
       logger.debug("[auth] access token invalid, falling back to refresh token", e);
     }
@@ -90,7 +93,11 @@ export async function getSession(): Promise<boolean> {
   if (!refreshToken) return false;
   try {
     const { payload } = await jwtVerify(refreshToken, getSecret());
-    return payload.sub === REFRESH_COOKIE;
+    if (payload.sub === REFRESH_COOKIE) {
+      logger.info("[auth] session valid via refresh token");
+      return true;
+    }
+    return false;
   } catch (e) {
     logger.warn("[auth] refresh token invalid or expired", e);
     return false;

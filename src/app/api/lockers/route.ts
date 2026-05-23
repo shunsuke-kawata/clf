@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  logger.debug("[lockers] list ok", { count: data?.length ?? 0 });
+  logger.info("[lockers] list ok", { count: data?.length ?? 0 });
   return NextResponse.json(data);
 }
 

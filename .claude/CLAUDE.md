@@ -190,6 +190,23 @@ src/features/locker/schemas/locker.test.ts  ← 隣に置く
 - **期待される失敗**（期限切れ・バリデーション失敗など）: `logger.warn` または `logger.debug` でコンテキストを出力
 - エラーを握りつぶして `return false` / `return null` するだけの実装は禁止。ログを出してから返す
 
+### ログレベルの使い分け
+
+デフォルトのログレベルは `warn`。環境変数 `LOG_LEVEL` または `NEXT_PUBLIC_LOG_LEVEL` で上書き可能。
+
+| レベル | 用途 |
+|--------|------|
+| `logger.error` | 想定外のエラー（DB障害・外部API失敗・例外） |
+| `logger.warn` | 期待される失敗（認証失敗・バリデーション失敗・トークン期限切れ） |
+| `logger.info` | 主要フローの正常完了（セッション発行・ロッカー作成・写真アップロード） |
+| `logger.debug` | 開発時のみ必要な詳細情報（クエリ結果件数・中間値） |
+
+新規機能を実装するときは、以下のタイミングで適切なレベルのログを追加する。
+- リクエスト処理の正常完了 → `logger.info`
+- バリデーション失敗・認証拒否 → `logger.warn`
+- DB・外部API・予期しない例外 → `logger.error`
+- デバッグ用の詳細情報 → `logger.debug`
+
 ### SOLID原則
 
 - **Single Responsibility**: 1つのクラス・関数は1つの責務のみを持つ

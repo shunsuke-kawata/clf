@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
+import { APP_CONFIG } from "@/lib/config";
 
 type PhotonFeature = {
   geometry: { coordinates: [number, number] };
@@ -35,9 +36,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "q is required" }, { status: 400 });
   }
 
-  const url = new URL("https://photon.komoot.io/api/");
+  const url = new URL(APP_CONFIG.geocode.url);
   url.searchParams.set("q", q);
-  url.searchParams.set("limit", "10");
+  url.searchParams.set("limit", String(APP_CONFIG.geocode.upstreamLimit));
 
   const res = await fetch(url.toString(), {
     headers: { "User-Agent": "clf-app" },
@@ -50,6 +51,6 @@ export async function GET(req: NextRequest) {
 
   const data: PhotonResponse = await res.json();
   const japan = data.features.filter((f) => f.properties.countrycode === "JP");
-  logger.debug("[geocode] ok", { q, hits: japan.length });
-  return NextResponse.json(japan.slice(0, 5).map(normalize));
+  logger.info("[geocode] ok", { q, hits: japan.length });
+  return NextResponse.json(japan.slice(0, APP_CONFIG.geocode.resultLimit).map(normalize));
 }

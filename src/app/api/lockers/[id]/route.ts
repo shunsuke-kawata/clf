@@ -23,6 +23,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status });
   }
 
+  logger.info("[lockers] get ok", { id });
   return NextResponse.json(data);
 }
 

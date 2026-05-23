@@ -5,6 +5,7 @@ import { useMap } from "react-leaflet";
 import L from "leaflet";
 import { logger } from "@/lib/logger";
 import { API_ROUTES } from "@/lib/routes";
+import { APP_CONFIG } from "@/lib/config";
 
 type SearchResult = {
   lat: string;
@@ -18,7 +19,7 @@ type Props = {
 
 function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
   );
 }
 
