@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -57,7 +58,7 @@ export function LockerBottomSheet({ lockerId, supabaseUrl, onClose }: Props) {
               className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="編集"
             >
-              ✏️
+              <Pencil className="w-5 h-5" />
             </Link>
           )}
         </SheetHeader>
