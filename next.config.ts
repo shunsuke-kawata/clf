@@ -28,6 +28,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // ngrok 経由でのローカル開発アクセスを許可（iPhone で geolocation をテストするため）
+  ...(isDev && {
+    allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok.io"],
+  }),
   async headers() {
     return [
       {
