@@ -64,7 +64,7 @@ function FlyToController({
     )
       return;
     prevTarget.current = target;
-    map.flyTo([target.lat, target.lng], 16, { duration: 0.8 });
+    map.flyTo([target.lat, target.lng], APP_CONFIG.map.pickerFlyZoom, { duration: 0.8 });
   }, [target, map]);
 
   return null;
@@ -86,7 +86,7 @@ export default function MapPicker({
   return (
     <MapContainer
       center={[lat, lng]}
-      zoom={19}
+      zoom={APP_CONFIG.map.pickerZoom}
       className="h-64 w-full rounded-lg"
     >
       <TileLayer

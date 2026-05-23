@@ -10,6 +10,8 @@ export const APP_CONFIG = {
   map: {
     defaultCenter: { lat: 35.6812, lng: 139.7671 } as const,
     defaultZoom: 15,
+    pickerZoom: 19,
+    pickerFlyZoom: 16,
     geolocationTimeout: 10_000,
     tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileAttribution:
