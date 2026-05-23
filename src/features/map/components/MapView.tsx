@@ -7,8 +7,11 @@ import L from "leaflet";
 import type { Locker } from "@/features/locker/schemas/locker";
 import { logger } from "@/lib/logger";
 import { APP_CONFIG } from "@/lib/config";
+import { Navigation } from "lucide-react";
+import { LockerIcon } from "@/components/icons/LockerIcon";
 import { LockerMarker } from "./LockerMarker";
 import { LockerBottomSheet } from "./LockerBottomSheet";
+import { NearbySheet } from "./NearbySheet";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
 import { SearchResultMarker } from "./SearchResultMarker";
@@ -51,7 +54,7 @@ function CurrentLocationButton() {
   }
 
   return (
-    <div ref={containerRef} className="absolute bottom-24 right-4 z-[1000]">
+    <div ref={containerRef} className="absolute bottom-44 right-4 z-[1000]">
       <button
         type="button"
         onClick={handleClick}
@@ -65,11 +68,61 @@ function CurrentLocationButton() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
         ) : (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="3" strokeWidth="2" />
-            <path strokeLinecap="round" strokeWidth="2" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-            <circle cx="12" cy="12" r="8" strokeWidth="2" strokeDasharray="4 2" />
+          <Navigation className="w-6 h-6" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+type UserLocation = { lat: number; lng: number };
+
+function NearbyButton({ onOpen }: { onOpen: (loc: UserLocation) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    L.DomEvent.disableClickPropagation(containerRef.current);
+    L.DomEvent.disableScrollPropagation(containerRef.current);
+  }, []);
+
+  async function handleClick() {
+    if (!navigator.geolocation) {
+      logger.warn("[NearbyButton] geolocation not supported");
+      return;
+    }
+    setLoading(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: APP_CONFIG.map.geolocationTimeout,
+        })
+      );
+      onOpen({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    } catch (e) {
+      logger.warn("[NearbyButton] geolocation failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="absolute bottom-24 right-4 z-[1000]">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        aria-label="近くのロッカーを探す"
+        className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-primary disabled:opacity-50 active:scale-95 transition-transform"
+      >
+        {loading ? (
+          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
+        ) : (
+          <LockerIcon className="w-6 h-6 text-primary" />
         )}
       </button>
     </div>
@@ -105,6 +158,9 @@ type SearchPin = { lat: number; lng: number; name: string };
 export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Props) {
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
   const [selectedLockerId, setSelectedLockerId] = useState<string | null>(null);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [flyToLocker, setFlyToLocker] = useState<{ lat: number; lng: number } | null>(null);
 
   return (
     <>
@@ -121,9 +177,16 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         <MapResizeHandler />
         <ZoomControl position="bottomleft" />
         <CurrentLocationButton />
+        <NearbyButton
+          onOpen={(loc) => {
+            setUserLocation(loc);
+            setNearbyOpen(true);
+          }}
+        />
         <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
+        {flyToLocker && <FlyToHandler lat={flyToLocker.lat} lng={flyToLocker.lng} />}
         {lockers.map((locker) => (
           <LockerMarker
             key={locker.id}
@@ -137,6 +200,17 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         lockerId={selectedLockerId}
         supabaseUrl={supabaseUrl}
         onClose={() => setSelectedLockerId(null)}
+      />
+      <NearbySheet
+        open={nearbyOpen}
+        onClose={() => setNearbyOpen(false)}
+        lockers={lockers}
+        userLocation={userLocation}
+        onSelectLocker={(locker) => {
+          setNearbyOpen(false);
+          setSelectedLockerId(locker.id);
+          setFlyToLocker({ lat: locker.lat, lng: locker.lng });
+        }}
       />
     </>
   );
