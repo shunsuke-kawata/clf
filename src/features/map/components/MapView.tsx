@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Locker } from "@/features/locker/schemas/locker";
 import { logger } from "@/lib/logger";
+import { APP_CONFIG } from "@/lib/config";
 import { LockerMarker } from "./LockerMarker";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
@@ -38,7 +39,7 @@ function CurrentLocationButton() {
     setLoading(true);
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
       );
       map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { duration: 1.5 });
     } catch (e) {
@@ -89,12 +90,7 @@ function MapResizeHandler() {
 // Leaflet デフォルトアイコン修正（モジュールロード時に即時実行）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+L.Icon.Default.mergeOptions(APP_CONFIG.map.leafletIcons);
 
 type Props = {
   lockers: Locker[];
@@ -109,14 +105,14 @@ export default function MapView({ lockers, onMapClick, flyTo }: Props) {
 
   return (
     <MapContainer
-      center={[35.6812, 139.7671]} // 東京駅
+      center={[APP_CONFIG.map.defaultCenter.lat, APP_CONFIG.map.defaultCenter.lng]}
       zoom={13}
       className="h-dvh w-full"
       zoomControl={false}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={APP_CONFIG.map.tileAttribution}
+        url={APP_CONFIG.map.tileUrl}
       />
       <MapResizeHandler />
       <ZoomControl position="bottomleft" />
