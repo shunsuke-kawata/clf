@@ -14,12 +14,12 @@ help:
 	@echo "  make db-status Supabaseの状態確認"
 
 ## ローカル開発（Supabase + Next.js）
-dev: db-start
+dev: db-start next-kill
 	pnpm dev
 
 ## HTTPS開発（Supabase + Cloudflare tunnel + Next.js）
 ## iPhone等から現在地取得・画像表示をテストする場合に使用
-https: db-start
+https: db-start next-kill
 	@mkdir -p $(LOG_DIR)
 	@if [ -f $(TUNNEL_PID_FILE) ]; then \
 		kill $$(cat $(TUNNEL_PID_FILE)) 2>/dev/null; \
@@ -32,6 +32,10 @@ https: db-start
 	@sleep 3
 	@grep -o 'https://[^ ]*\.trycloudflare\.com' $(LOG_DIR)/cloudflared.log 2>/dev/null || echo "  (URL取得中、上記ログを確認)"
 	pnpm dev
+
+## 既存のNext.js devサーバーを停止（ポート3000を解放）
+next-kill:
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null && echo "既存のNext.jsを停止しました" || true
 
 ## 全サービス停止
 stop: db-stop
