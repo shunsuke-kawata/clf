@@ -54,7 +54,7 @@ export function LockerBottomSheet({ lockerId, supabaseUrl, onClose }: Props) {
           <SheetTitle>コインロッカー</SheetTitle>
           {locker && (
             <Link
-              href={PAGE_ROUTES.adminEdit(locker.id)}
+              href={PAGE_ROUTES.lockerEdit(locker.id)}
               className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="編集"
             >

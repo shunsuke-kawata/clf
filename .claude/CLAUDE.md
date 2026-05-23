@@ -263,6 +263,26 @@ if (APP_CONFIG.isProd) { ... }
 | `APP_CONFIG.isLocal` | `NODE_ENV !== "production"` | HTTP LAN接続でのgeolocation許可、デバッグ専用処理 |
 | `APP_CONFIG.isProd` | `NODE_ENV === "production"` | セキュリティチェック強化、外部サービス呼び出し制限 |
 
+## 写真URLの生成ルール
+
+**Supabase Storage の写真URLは必ず `getPhotoUrl(supabaseUrl, storageKey)` を使うこと。**
+
+```ts
+import { getPhotoUrl } from "@/lib/utils/photo";
+
+// ✅ 正しい
+const url = getPhotoUrl(supabaseUrl, photo.storage_key);
+
+// ❌ 禁止 — ローカル開発時にブラウザが 127.0.0.1 へのリクエストをブロックする
+const url = `${supabaseUrl}/storage/v1/object/public/locker-photos/${photo.storage_key}`;
+```
+
+### 理由
+
+ローカル Supabase は `http://127.0.0.1:54321` で動作する。Cloudflare Tunnel 等のHTTPSトンネル経由でアクセスすると、ブラウザのセキュリティポリシー（loopback access block）により CORS エラーが発生する。
+
+`getPhotoUrl()` はローカル環境では `/api/photos/proxy?key=...` を返し、Next.js サーバー経由でフェッチすることでブラウザの制限を回避する。本番環境では直接 Supabase URL を返す。
+
 ## 注意事項
 
 - `lib/supabase/server.ts` はサーバー専用（service_role key）。クライアントからimportしない

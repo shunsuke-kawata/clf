@@ -8,14 +8,15 @@ export async function POST(req: NextRequest) {
   const password = typeof body.password === "string" ? body.password : "";
   logger.debug("[auth/login] password extracted, verifying");
 
-  if (!checkPassword(password)) {
+  const role = checkPassword(password);
+  if (!role) {
     logger.warn("[auth/login] invalid password attempt");
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 
-  logger.debug("[auth/login] password ok, issuing session cookies");
-  const res = NextResponse.json({ ok: true });
-  await setSessionCookies(res);
-  logger.info("[auth/login] session issued");
+  logger.debug("[auth/login] password ok, issuing session cookies", { role });
+  const res = NextResponse.json({ ok: true, role });
+  await setSessionCookies(res, role);
+  logger.info("[auth/login] session issued", { role });
   return res;
 }
