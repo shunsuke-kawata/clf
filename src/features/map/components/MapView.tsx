@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, Marker, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Locker } from "@/features/locker/schemas/locker";
@@ -24,7 +24,7 @@ function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-function CurrentLocationButton() {
+function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocation | null }) {
   const map = useMap();
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +36,10 @@ function CurrentLocationButton() {
   }, []);
 
   async function handleClick() {
+    if (currentPosition) {
+      map.flyTo([currentPosition.lat, currentPosition.lng], 16, { duration: 1.5 });
+      return;
+    }
     if (!navigator.geolocation) {
       logger.warn("[CurrentLocationButton] geolocation not supported");
       return;
@@ -77,7 +81,37 @@ function CurrentLocationButton() {
 
 type UserLocation = { lat: number; lng: number };
 
-function NearbyButton({ onOpen }: { onOpen: (loc: UserLocation) => void }) {
+function UserLocationMarker({ lat, lng }: UserLocation) {
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        className: "",
+        html: `<svg width="24" height="38" viewBox="0 0 24 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="ug" cx="38%" cy="32%" r="65%">
+              <stop offset="0%" stop-color="#B8E8FF"/>
+              <stop offset="100%" stop-color="#3AAAD8"/>
+            </radialGradient>
+          </defs>
+          <rect x="10" y="20" width="4" height="18" rx="2" fill="#3AAAD8"/>
+          <circle cx="12" cy="12" r="11" fill="url(#ug)"/>
+        </svg>`,
+        iconSize: [24, 38],
+        iconAnchor: [12, 38],
+      }),
+    []
+  );
+
+  return <Marker position={[lat, lng]} icon={icon} interactive={false} zIndexOffset={-100} />;
+}
+
+function NearbyButton({
+  onOpen,
+  currentPosition,
+}: {
+  onOpen: (loc: UserLocation) => void;
+  currentPosition: UserLocation | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -88,6 +122,10 @@ function NearbyButton({ onOpen }: { onOpen: (loc: UserLocation) => void }) {
   }, []);
 
   async function handleClick() {
+    if (currentPosition) {
+      onOpen(currentPosition);
+      return;
+    }
     if (!navigator.geolocation) {
       logger.warn("[NearbyButton] geolocation not supported");
       return;
@@ -161,6 +199,17 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [flyToLocker, setFlyToLocker] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentPosition, setCurrentPosition] = useState<UserLocation | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setCurrentPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => logger.warn("[MapView] watchPosition failed", err),
+      { timeout: APP_CONFIG.map.geolocationTimeout }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   return (
     <>
@@ -176,13 +225,15 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         />
         <MapResizeHandler />
         <ZoomControl position="bottomleft" />
-        <CurrentLocationButton />
+        <CurrentLocationButton currentPosition={currentPosition} />
         <NearbyButton
+          currentPosition={currentPosition}
           onOpen={(loc) => {
             setUserLocation(loc);
             setNearbyOpen(true);
           }}
         />
+        {currentPosition && <UserLocationMarker lat={currentPosition.lat} lng={currentPosition.lng} />}
         <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
@@ -205,7 +256,7 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         open={nearbyOpen}
         onClose={() => setNearbyOpen(false)}
         lockers={lockers}
-        userLocation={userLocation}
+        userLocation={currentPosition ?? userLocation}
         onSelectLocker={(locker) => {
           setNearbyOpen(false);
           setSelectedLockerId(locker.id);
