@@ -221,12 +221,14 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
       <MapContainer
         center={[APP_CONFIG.map.defaultCenter.lat, APP_CONFIG.map.defaultCenter.lng]}
         zoom={13}
+        maxZoom={APP_CONFIG.map.maxZoom}
         className="h-dvh w-full"
         zoomControl={false}
       >
         <TileLayer
           attribution={APP_CONFIG.map.tileAttribution}
           url={APP_CONFIG.map.tileUrl}
+          maxZoom={APP_CONFIG.map.maxZoom}
         />
         <MapResizeHandler />
         <ZoomControl position="bottomleft" />

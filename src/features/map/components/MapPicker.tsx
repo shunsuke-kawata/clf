@@ -87,11 +87,13 @@ export default function MapPicker({
     <MapContainer
       center={[lat, lng]}
       zoom={APP_CONFIG.map.pickerZoom}
+      maxZoom={APP_CONFIG.map.maxZoom}
       className="h-64 w-full rounded-lg"
     >
       <TileLayer
         attribution={APP_CONFIG.map.tileAttribution}
         url={APP_CONFIG.map.tileUrl}
+        maxZoom={APP_CONFIG.map.maxZoom}
       />
       <MapResizer />
       {onChange && <ClickHandler onChange={onChange} />}
