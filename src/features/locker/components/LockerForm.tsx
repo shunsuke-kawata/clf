@@ -73,10 +73,15 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     setGeoState("loading");
     setGeoError("");
 
-    if (!APP_CONFIG.isLocal && !window.isSecureContext) {
+    if (!window.isSecureContext) {
       logger.warn("[LockerForm] geolocation unavailable: insecure context");
-      setGeoError("HTTPSでない接続では現在地を取得できません。地図から場所を指定してください。");
-      setGeoState("error");
+      if (APP_CONFIG.isProd) {
+        setGeoError("HTTPSでない接続では現在地を取得できません。地図から場所を指定してください。");
+        setGeoState("error");
+      } else {
+        // ローカル開発のLAN HTTP接続ではブラウザがgeolocationをブロックするためピンモードへフォールバック
+        setGeoState("idle");
+      }
       setLocationMode("pin");
       return;
     }
