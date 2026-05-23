@@ -1,5 +1,6 @@
 export const APP_CONFIG = {
   isProd: process.env.NODE_ENV === "production",
+  isLocal: process.env.NODE_ENV !== "production",
   log: {
     level:
       process.env.NEXT_PUBLIC_LOG_LEVEL?.toLowerCase() ??

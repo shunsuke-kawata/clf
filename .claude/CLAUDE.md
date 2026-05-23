@@ -144,6 +144,34 @@ pnpm test       # テスト（watch モード）
 pnpm test:run   # テスト（一回実行）
 ```
 
+## iPhone でのローカル開発（geolocation テスト）
+
+iPhoneから `localhost` には直接アクセスできず、LAN IP（`http://192.168.x.x:3000`）経由はHTTPのためブラウザがgeolocationをブロックする。HTTPSトンネルを使ってiPhoneからアクセスする。
+
+### Cloudflare Quick Tunnel（推奨・アカウント不要）
+
+```bash
+# 1. cloudflared をインストール（初回のみ）
+brew install cloudflared
+
+# 2. 開発サーバーを起動
+pnpm dev
+
+# 3. 別ターミナルでトンネルを起動
+cloudflared tunnel --url http://localhost:3000
+```
+
+起動後に表示される `https://xxxx.trycloudflare.com` をiPhoneのブラウザで開く。
+`next.config.ts` の `allowedDevOrigins` に設定済みなので追加設定は不要。
+
+### localtunnel（アカウント不要・インストール不要）
+
+```bash
+npx localtunnel --port 3000
+```
+
+`https://xxxx.loca.lt` のURLが発行される。初回アクセス時にパスワード入力画面が出る場合は、表示されているIPアドレスをそのまま入力する。
+
 ## テスト方針
 
 テストフレームワークは **Vitest v2 + happy-dom**。
@@ -197,6 +225,25 @@ src/features/locker/schemas/locker.test.ts  ← 隣に置く
 - **Liskov Substitution**: 派生クラスは基底クラスと置換可能であるべき
 - **Interface Segregation**: クライアントが使わないメソッドへの依存を強制しない
 - **Dependency Inversion**: 上位モジュールは下位モジュールに依存せず、抽象に依存する
+
+## 環境の切り分け
+
+`APP_CONFIG` に `isProd` / `isLocal` フラグが用意されている。環境によって挙動を変える場合はこれを使う。
+
+```ts
+import { APP_CONFIG } from "@/lib/config";
+
+// ローカルのみ実行
+if (APP_CONFIG.isLocal) { ... }
+
+// 本番のみ実行
+if (APP_CONFIG.isProd) { ... }
+```
+
+| フラグ | 値 | 用途例 |
+|--------|----|--------|
+| `APP_CONFIG.isLocal` | `NODE_ENV !== "production"` | HTTP LAN接続でのgeolocation許可、デバッグ専用処理 |
+| `APP_CONFIG.isProd` | `NODE_ENV === "production"` | セキュリティチェック強化、外部サービス呼び出し制限 |
 
 ## 注意事項
 
