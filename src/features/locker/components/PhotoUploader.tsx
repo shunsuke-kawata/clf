@@ -7,6 +7,7 @@ import {
   useImperativeHandle,
   useEffect,
 } from "react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
 import { API_ROUTES } from "@/lib/routes";
@@ -294,10 +295,10 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
                   <button
                     type="button"
                     onClick={() => removePending(p.id, i)}
-                    className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center text-base leading-none"
+                    className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center"
                     aria-label="削除"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ))}

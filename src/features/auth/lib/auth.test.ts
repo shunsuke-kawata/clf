@@ -1,14 +1,3 @@
-/**
- * 認証ロジックのテスト
- *
- * checkPassword: タイミング攻撃対策の timingSafeEqual を使うため、
- *   長さ一致・不一致・内容不一致の各ケースを個別に確認する。
- *
- * getSession: アクセストークン有効 / 期限切れ（リフレッシュへフォールバック）/
- *   両トークンなし の 3 分岐を実際の JWT を生成して検証する。
- *   jose のモックは使わず実 JWT を作ることで、署名検証ロジック自体もカバーする。
- */
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
@@ -19,18 +8,13 @@ import {
   REFRESH_COOKIE,
 } from "./auth";
 
-// vitest.setup.ts で next/headers をグローバルにモック済み。
-// このファイルでは各テストの cookies() 戻り値を上書きする。
-
-// vitest.config.ts の test.env で SESSION_SECRET を設定済みなので
-// getSecret() は process.env.SESSION_SECRET を読み取れる
 const SECRET = new TextEncoder().encode(
   process.env.SESSION_SECRET ?? "test-session-secret-for-vitest-ok"
 );
 
-/** テスト用 JWT を生成するヘルパー */
-async function makeJwt(sub: string, expiresIn: string): Promise<string> {
-  return new SignJWT({})
+async function makeJwt(sub: string, expiresIn: string, role?: "admin" | "user"): Promise<string> {
+  const payload = role ? { role } : {};
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(sub)
     .setIssuedAt()
@@ -38,7 +22,6 @@ async function makeJwt(sub: string, expiresIn: string): Promise<string> {
     .sign(SECRET);
 }
 
-/** cookies() のモック戻り値を組み立てるヘルパー */
 function mockCookieStore(tokenMap: Record<string, string | undefined>) {
   return {
     get: vi.fn().mockImplementation((name: string) =>
@@ -54,24 +37,24 @@ function mockCookieStore(tokenMap: Record<string, string | undefined>) {
 // ─────────────────────────────────────────────
 
 describe("checkPassword", () => {
-  // APP_PASSWORD は vitest.config.ts の test.env で "test-password" に設定済み
-
-  it("正しいパスワードで true を返す", () => {
-    expect(checkPassword("test-password")).toBe(true);
+  it("APP_PASSWORDで 'user' を返す", () => {
+    expect(checkPassword("test-password")).toBe("user");
   });
 
-  it("間違ったパスワードで false を返す", () => {
-    expect(checkPassword("wrong-password")).toBe(false);
+  it("ADMIN_PASSWORDで 'admin' を返す", () => {
+    expect(checkPassword("test-admin-password")).toBe("admin");
   });
 
-  it("空文字で false を返す（長さ不一致のため早期リターン）", () => {
-    // timingSafeEqual は長さが違う場合に呼ばれないことを含めて確認
-    expect(checkPassword("")).toBe(false);
+  it("間違ったパスワードで null を返す", () => {
+    expect(checkPassword("wrong-password")).toBeNull();
   });
 
-  it("長さが同じでも内容が違う場合は false を返す", () => {
-    // "test-password" と同じバイト数で異なる文字列
-    expect(checkPassword("test-passwore")).toBe(false);
+  it("空文字で null を返す（長さ不一致のため早期リターン）", () => {
+    expect(checkPassword("")).toBeNull();
+  });
+
+  it("長さが同じでも内容が違う場合は null を返す", () => {
+    expect(checkPassword("test-passwore")).toBeNull();
   });
 });
 
@@ -84,76 +67,74 @@ describe("getSession", () => {
     vi.clearAllMocks();
   });
 
-  it("有効なアクセストークンがあれば true を返す", async () => {
-    // アクセストークンの署名・有効期限・subject を全て検証する正常系
-    const token = await makeJwt(ACCESS_COOKIE, "15m");
+  it("admin ロール付きアクセストークンで 'admin' を返す", async () => {
+    const token = await makeJwt(ACCESS_COOKIE, "15m", "admin");
     vi.mocked(cookies).mockResolvedValue(
-      mockCookieStore({ [ACCESS_COOKIE]: token }) as unknown as Awaited<
-        ReturnType<typeof cookies>
-      >
+      mockCookieStore({ [ACCESS_COOKIE]: token }) as unknown as Awaited<ReturnType<typeof cookies>>
     );
-
-    expect(await getSession()).toBe(true);
+    expect(await getSession()).toBe("admin");
   });
 
-  it("アクセストークンが期限切れでも有効なリフレッシュトークンがあれば true を返す", async () => {
-    // アクセストークン検証失敗 → リフレッシュトークンへのフォールバック分岐
-    const expiredAccess = await makeJwt(ACCESS_COOKIE, "-1s");
-    const validRefresh = await makeJwt(REFRESH_COOKIE, "30d");
+  it("user ロール付きアクセストークンで 'user' を返す", async () => {
+    const token = await makeJwt(ACCESS_COOKIE, "15m", "user");
+    vi.mocked(cookies).mockResolvedValue(
+      mockCookieStore({ [ACCESS_COOKIE]: token }) as unknown as Awaited<ReturnType<typeof cookies>>
+    );
+    expect(await getSession()).toBe("user");
+  });
+
+  it("ロールなし（旧形式）トークンは 'user' にフォールバックする", async () => {
+    const token = await makeJwt(ACCESS_COOKIE, "15m");
+    vi.mocked(cookies).mockResolvedValue(
+      mockCookieStore({ [ACCESS_COOKIE]: token }) as unknown as Awaited<ReturnType<typeof cookies>>
+    );
+    expect(await getSession()).toBe("user");
+  });
+
+  it("アクセストークンが期限切れでも有効なリフレッシュトークンがあれば role を返す", async () => {
+    const expiredAccess = await makeJwt(ACCESS_COOKIE, "-1s", "admin");
+    const validRefresh = await makeJwt(REFRESH_COOKIE, "30d", "admin");
     vi.mocked(cookies).mockResolvedValue(
       mockCookieStore({
         [ACCESS_COOKIE]: expiredAccess,
         [REFRESH_COOKIE]: validRefresh,
       }) as unknown as Awaited<ReturnType<typeof cookies>>
     );
-
-    expect(await getSession()).toBe(true);
+    expect(await getSession()).toBe("admin");
   });
 
-  it("アクセストークンがなくてもリフレッシュトークンが有効なら true を返す", async () => {
-    // Cookie にアクセストークンが存在しない場合のリフレッシュフォールバック
-    const validRefresh = await makeJwt(REFRESH_COOKIE, "30d");
+  it("アクセストークンがなくてもリフレッシュトークンが有効なら role を返す", async () => {
+    const validRefresh = await makeJwt(REFRESH_COOKIE, "30d", "user");
     vi.mocked(cookies).mockResolvedValue(
-      mockCookieStore({ [REFRESH_COOKIE]: validRefresh }) as unknown as Awaited<
-        ReturnType<typeof cookies>
-      >
+      mockCookieStore({ [REFRESH_COOKIE]: validRefresh }) as unknown as Awaited<ReturnType<typeof cookies>>
     );
-
-    expect(await getSession()).toBe(true);
+    expect(await getSession()).toBe("user");
   });
 
-  it("両トークンが存在しない場合は false を返す", async () => {
+  it("両トークンが存在しない場合は null を返す", async () => {
     vi.mocked(cookies).mockResolvedValue(
       mockCookieStore({}) as unknown as Awaited<ReturnType<typeof cookies>>
     );
-
-    expect(await getSession()).toBe(false);
+    expect(await getSession()).toBeNull();
   });
 
-  it("リフレッシュトークンも期限切れの場合は false を返す", async () => {
-    // 両トークンが存在するが両方期限切れの場合
-    const expiredAccess = await makeJwt(ACCESS_COOKIE, "-1s");
-    const expiredRefresh = await makeJwt(REFRESH_COOKIE, "-1s");
+  it("リフレッシュトークンも期限切れの場合は null を返す", async () => {
+    const expiredAccess = await makeJwt(ACCESS_COOKIE, "-1s", "user");
+    const expiredRefresh = await makeJwt(REFRESH_COOKIE, "-1s", "user");
     vi.mocked(cookies).mockResolvedValue(
       mockCookieStore({
         [ACCESS_COOKIE]: expiredAccess,
         [REFRESH_COOKIE]: expiredRefresh,
       }) as unknown as Awaited<ReturnType<typeof cookies>>
     );
-
-    expect(await getSession()).toBe(false);
+    expect(await getSession()).toBeNull();
   });
 
-  it("subject が不正なアクセストークンは false を返す（署名は正しくても sub が違う）", async () => {
-    // sub に誤った値が入ったトークンを拒否することを確認
-    const wrongSubToken = await makeJwt("wrong-subject", "15m");
+  it("subject が不正なアクセストークンは null を返す", async () => {
+    const wrongSubToken = await makeJwt("wrong-subject", "15m", "admin");
     vi.mocked(cookies).mockResolvedValue(
-      mockCookieStore({ [ACCESS_COOKIE]: wrongSubToken }) as unknown as Awaited<
-        ReturnType<typeof cookies>
-      >
+      mockCookieStore({ [ACCESS_COOKIE]: wrongSubToken }) as unknown as Awaited<ReturnType<typeof cookies>>
     );
-
-    // アクセストークン拒否後にリフレッシュトークンも存在しないので false
-    expect(await getSession()).toBe(false);
+    expect(await getSession()).toBeNull();
   });
 });

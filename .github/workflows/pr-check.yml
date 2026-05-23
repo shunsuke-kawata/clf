@@ -13,6 +13,7 @@ jobs:
       ANON_KEY: placeholder_anon_key
       SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
       APP_PASSWORD: placeholder
+      ADMIN_PASSWORD: placeholder_admin
       SESSION_SECRET: placeholder_secret_minimum_32_chars_xxxx
     steps:
       - uses: actions/checkout@v4

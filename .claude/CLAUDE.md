@@ -209,6 +209,7 @@ src/features/locker/schemas/locker.test.ts  ← 隣に置く
 - **DRY**（Don't Repeat Yourself）: 同じロジックを複数箇所に書かない。共通化できるものは関数・コンポーネント・フックに切り出す
 - **KISS**（Keep It Simple, Stupid）: シンプルな実装を優先する。過度な抽象化・汎用化をしない
 - **YAGNI**（You Aren't Gonna Need It）: 今必要でない機能・拡張ポイントは実装しない。将来の要件を先読みしてコードを膨らませない
+- **マジックナンバー禁止**: コード中に数値・文字列リテラルを直接埋め込まない。`APP_CONFIG` など定数として一元管理し、変更箇所を最小化する
 
 ### 例外処理
 
@@ -261,6 +262,26 @@ if (APP_CONFIG.isProd) { ... }
 |--------|----|--------|
 | `APP_CONFIG.isLocal` | `NODE_ENV !== "production"` | HTTP LAN接続でのgeolocation許可、デバッグ専用処理 |
 | `APP_CONFIG.isProd` | `NODE_ENV === "production"` | セキュリティチェック強化、外部サービス呼び出し制限 |
+
+## 写真URLの生成ルール
+
+**Supabase Storage の写真URLは必ず `getPhotoUrl(supabaseUrl, storageKey)` を使うこと。**
+
+```ts
+import { getPhotoUrl } from "@/lib/utils/photo";
+
+// ✅ 正しい
+const url = getPhotoUrl(supabaseUrl, photo.storage_key);
+
+// ❌ 禁止 — ローカル開発時にブラウザが 127.0.0.1 へのリクエストをブロックする
+const url = `${supabaseUrl}/storage/v1/object/public/locker-photos/${photo.storage_key}`;
+```
+
+### 理由
+
+ローカル Supabase は `http://127.0.0.1:54321` で動作する。Cloudflare Tunnel 等のHTTPSトンネル経由でアクセスすると、ブラウザのセキュリティポリシー（loopback access block）により CORS エラーが発生する。
+
+`getPhotoUrl()` はローカル環境では `/api/photos/proxy?key=...` を返し、Next.js サーバー経由でフェッチすることでブラウザの制限を回避する。本番環境では直接 Supabase URL を返す。
 
 ## 注意事項
 

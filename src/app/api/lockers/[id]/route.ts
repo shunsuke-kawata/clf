@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseReader, supabaseAdmin } from "@/lib/supabase/server";
 import { lockerSchema } from "@/features/locker/schemas/locker";
+import { getSessionRole } from "@/features/auth/lib/auth";
+import { APP_CONFIG } from "@/lib/config";
 import { logger } from "@/lib/logger";
 
 type Params = { params: Promise<{ id: string }> };
@@ -30,6 +32,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
+  const role = await getSessionRole(req);
+  if (!role) {
+    logger.warn("[lockers] update: unauthorized");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   logger.debug("[lockers] update: parsing request body", { id });
   const body = await req.json().catch(() => null);
@@ -61,10 +69,38 @@ export async function PUT(req: NextRequest, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
-  const { id } = await params;
-  logger.debug("[lockers] delete: deleting from DB", { id });
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const role = await getSessionRole(req);
+  if (!role) {
+    logger.warn("[lockers] delete: unauthorized");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (role !== "admin") {
+    logger.warn("[lockers] delete: forbidden (not admin)");
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
+  const { id } = await params;
+  logger.debug("[lockers] delete: fetching photo keys", { id });
+
+  const { data: photos } = await supabaseAdmin
+    .from("locker_photos")
+    .select("storage_key")
+    .eq("locker_id", id);
+
+  if (photos && photos.length > 0) {
+    const keys = photos.map((p: { storage_key: string }) => p.storage_key);
+    const { error: storageError } = await supabaseAdmin.storage
+      .from(APP_CONFIG.photo.bucket)
+      .remove(keys);
+    if (storageError) {
+      logger.error("[lockers] delete: storage removal failed", { id, error: storageError });
+    } else {
+      logger.debug("[lockers] delete: storage files removed", { id, count: keys.length });
+    }
+  }
+
+  logger.debug("[lockers] delete: deleting from DB", { id });
   const { error } = await supabaseAdmin
     .from("lockers")
     .delete()
@@ -75,7 +111,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  logger.debug("[lockers] delete: DB delete ok", { id });
   logger.info("[lockers] deleted", { id });
   return new NextResponse(null, { status: 204 });
 }

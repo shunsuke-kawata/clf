@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
 
@@ -16,7 +17,7 @@ export default function ErrorPage({ error, reset }: Props) {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
-      <p className="text-4xl">⚠️</p>
+      <AlertTriangle className="w-12 h-12 text-destructive" />
       <h1 className="text-lg font-semibold">エラーが発生しました</h1>
       <p className="text-sm text-muted-foreground">
         ページの読み込みに失敗しました。時間をおいて再試行してください。
