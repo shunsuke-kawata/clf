@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import type { LockerInput } from "@/features/locker/schemas/locker";
 
@@ -34,10 +35,10 @@ export function PricingEditor() {
               <button
                 type="button"
                 onClick={() => togglePrice(price)}
-                className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/20 text-xs leading-none"
+                className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/20"
                 aria-label={`¥${price.toLocaleString()}を削除`}
               >
-                ✕
+                <X className="w-3 h-3" />
               </button>
             </span>
           ))}

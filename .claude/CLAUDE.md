@@ -209,6 +209,7 @@ src/features/locker/schemas/locker.test.ts  ← 隣に置く
 - **DRY**（Don't Repeat Yourself）: 同じロジックを複数箇所に書かない。共通化できるものは関数・コンポーネント・フックに切り出す
 - **KISS**（Keep It Simple, Stupid）: シンプルな実装を優先する。過度な抽象化・汎用化をしない
 - **YAGNI**（You Aren't Gonna Need It）: 今必要でない機能・拡張ポイントは実装しない。将来の要件を先読みしてコードを膨らませない
+- **マジックナンバー禁止**: コード中に数値・文字列リテラルを直接埋め込まない。`APP_CONFIG` など定数として一元管理し、変更箇所を最小化する
 
 ### 例外処理
 
