@@ -9,6 +9,7 @@ import { logger } from "@/lib/logger";
 import { APP_CONFIG } from "@/lib/config";
 import { Navigation } from "lucide-react";
 import { LockerIcon } from "@/components/icons/LockerIcon";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { LockerMarker } from "./LockerMarker";
 import { LockerBottomSheet } from "./LockerBottomSheet";
 import { NearbySheet } from "./NearbySheet";
@@ -59,22 +60,24 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
 
   return (
     <div ref={containerRef} className="absolute bottom-44 right-4 z-[1000]">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={loading}
-        aria-label="現在地に戻る"
-        className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 disabled:opacity-50 active:scale-95 transition-transform"
-      >
-        {loading ? (
-          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        ) : (
-          <Navigation className="w-6 h-6" />
-        )}
-      </button>
+      <Tooltip tooltipKey="currentLocation">
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={loading}
+          aria-label="現在地に戻る"
+          className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 disabled:opacity-50 active:scale-95 transition-transform"
+        >
+          {loading ? (
+            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <Navigation className="w-6 h-6" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -147,22 +150,24 @@ function NearbyButton({
 
   return (
     <div ref={containerRef} className="absolute bottom-24 right-4 z-[1000]">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={loading}
-        aria-label="近くのロッカーを探す"
-        className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-primary disabled:opacity-50 active:scale-95 transition-transform"
-      >
-        {loading ? (
-          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        ) : (
-          <LockerIcon className="w-6 h-6 text-primary" />
-        )}
-      </button>
+      <Tooltip tooltipKey="nearbyLockers">
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={loading}
+          aria-label="近くのロッカーを探す"
+          className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-primary disabled:opacity-50 active:scale-95 transition-transform"
+        >
+          {loading ? (
+            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <LockerIcon className="w-6 h-6 text-primary" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 }
