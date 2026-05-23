@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  useMap,
+} from "react-leaflet";
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -55,9 +61,10 @@ function FlyToController({
     if (
       prevTarget.current?.lat === target.lat &&
       prevTarget.current?.lng === target.lng
-    ) return;
+    )
+      return;
     prevTarget.current = target;
-    map.flyTo([target.lat, target.lng], 19, { duration: 0.8 });
+    map.flyTo([target.lat, target.lng], 16, { duration: 0.8 });
   }, [target, map]);
 
   return null;
@@ -70,7 +77,12 @@ type Props = {
   flyTarget?: { lat: number; lng: number } | null;
 };
 
-export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Props) {
+export default function MapPicker({
+  lat,
+  lng,
+  onChange,
+  flyTarget = null,
+}: Props) {
   return (
     <MapContainer
       center={[lat, lng]}
