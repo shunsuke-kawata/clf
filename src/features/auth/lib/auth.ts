@@ -46,7 +46,7 @@ function comparePassword(input: string, stored: string): boolean {
 }
 
 export function checkPassword(input: string): SessionRole | null {
-  if (comparePassword(input, serverEnv.ADMIN_PASSWORD)) return "admin";
+  if (serverEnv.ADMIN_PASSWORD && comparePassword(input, serverEnv.ADMIN_PASSWORD)) return "admin";
   if (comparePassword(input, serverEnv.APP_PASSWORD)) return "user";
   return null;
 }

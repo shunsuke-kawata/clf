@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const serverEnvSchema = z.object({
   APP_PASSWORD: z.string().min(1),
-  ADMIN_PASSWORD: z.string().min(1),
+  ADMIN_PASSWORD: z.string().default(""),
   SESSION_SECRET: z.string().min(32),
   SUPABASE_URL: z.string(),
   ANON_KEY: z.string().min(1),
