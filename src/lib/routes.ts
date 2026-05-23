@@ -8,6 +8,7 @@ export const API_ROUTES = {
   },
   photos: {
     upload: "/api/photos",
+    proxy: (key: string) => `/api/photos/proxy?key=${encodeURIComponent(key)}`,
   },
   geocode: {
     search: (q: string) => `/api/geocode?q=${encodeURIComponent(q)}`,

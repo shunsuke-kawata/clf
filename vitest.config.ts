@@ -15,7 +15,7 @@ export default defineConfig({
     // process.env に注入するダミー値（server.ts・auth.ts がモジュール評価時に読む変数）
     env: {
       APP_PASSWORD: "test-password",
-      SESSION_SECRET: "test-session-secret-for-vitest",
+      SESSION_SECRET: "test-session-secret-for-vitest-ok",
       SUPABASE_URL: "https://test.supabase.co",
       ANON_KEY: "test-anon-key",
       SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",

@@ -8,7 +8,8 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   // 地図タイル・Leaflet アイコン（unpkg.com）・Supabase Storage 写真
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.supabase.co",
+  // 開発時はローカル Supabase（127.0.0.1:54321）も許可
+  `img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.supabase.co${isDev ? " http://127.0.0.1:54321" : ""}`,
   // Nominatim・Supabase はすべて API Route 経由のためサーバー側のみ
   "connect-src 'self'",
   "font-src 'self'",
@@ -28,6 +29,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // トンネル経由でのローカル開発アクセスを許可（iPhone で geolocation をテストするため）
+  ...(isDev && {
+    allowedDevOrigins: [
+      "*.trycloudflare.com", // Cloudflare Quick Tunnel（アカウント不要）
+      "*.loca.lt",           // localtunnel（アカウント不要）
+      "*.ngrok-free.app",    // ngrok free（要アカウント）
+      "*.ngrok.io",          // ngrok paid（要アカウント）
+    ],
+  }),
   async headers() {
     return [
       {

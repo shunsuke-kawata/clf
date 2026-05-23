@@ -41,13 +41,14 @@ class MapErrorBoundary extends Component<
 
 type Props = {
   lockers: Locker[];
+  supabaseUrl: string;
   flyTo?: { lat: number; lng: number } | null;
 };
 
-export function MapViewClient({ lockers, flyTo }: Props) {
+export function MapViewClient({ lockers, supabaseUrl, flyTo }: Props) {
   return (
     <MapErrorBoundary>
-      <MapView lockers={lockers} flyTo={flyTo} />
+      <MapView lockers={lockers} supabaseUrl={supabaseUrl} flyTo={flyTo} />
     </MapErrorBoundary>
   );
 }

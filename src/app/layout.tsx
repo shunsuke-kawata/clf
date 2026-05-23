@@ -24,6 +24,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
+  // resizes-content: Android Chrome でキーボード表示時にコンテンツ領域を縮小する。
+  // iOS Safari はこの設定を無視する（iOS 側のズーム対策は usePreventIOSZoom フックで対応）。
   interactiveWidget: "resizes-content",
 };
 
