@@ -7,6 +7,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
+  logger.debug("[lockers] get: querying DB", { id });
 
   const { data, error } = await supabaseReader
     .from("lockers")
@@ -23,12 +24,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status });
   }
 
+  logger.debug("[lockers] get: DB returned", { id, photoCount: data.locker_photos?.length ?? 0 });
   logger.info("[lockers] get ok", { id });
   return NextResponse.json(data);
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const { id } = await params;
+  logger.debug("[lockers] update: parsing request body", { id });
   const body = await req.json().catch(() => null);
   const parsed = lockerSchema.safeParse(body);
 
@@ -40,6 +43,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     );
   }
 
+  logger.debug("[lockers] update: validation ok, updating DB", { id });
   const { data, error } = await supabaseAdmin
     .from("lockers")
     .update({ ...parsed.data, updated_at: new Date().toISOString() })
@@ -52,12 +56,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  logger.debug("[lockers] update: DB update ok", { id });
   logger.info("[lockers] updated", { id });
   return NextResponse.json(data);
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
+  logger.debug("[lockers] delete: deleting from DB", { id });
 
   const { error } = await supabaseAdmin
     .from("lockers")
@@ -69,6 +75,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  logger.debug("[lockers] delete: DB delete ok", { id });
   logger.info("[lockers] deleted", { id });
   return new NextResponse(null, { status: 204 });
 }

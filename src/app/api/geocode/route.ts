@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(APP_CONFIG.geocode.url);
   url.searchParams.set("q", q);
   url.searchParams.set("limit", String(APP_CONFIG.geocode.upstreamLimit));
+  logger.debug("[geocode] calling upstream API", { q });
 
   const res = await fetch(url.toString(), {
     headers: { "User-Agent": "clf-app" },
@@ -50,7 +51,9 @@ export async function GET(req: NextRequest) {
   }
 
   const data: PhotonResponse = await res.json();
+  logger.debug("[geocode] upstream responded", { total: data.features.length });
   const japan = data.features.filter((f) => f.properties.countrycode === "JP");
+  logger.debug("[geocode] filtered to JP", { hits: japan.length });
   logger.info("[geocode] ok", { q, hits: japan.length });
   return NextResponse.json(japan.slice(0, APP_CONFIG.geocode.resultLimit).map(normalize));
 }

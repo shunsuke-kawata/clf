@@ -17,6 +17,7 @@ async function ensureBucket(): Promise<void> {
 }
 
 export async function POST(req: NextRequest) {
+  logger.debug("[photos] request received");
   const formData = await req.formData().catch(() => null);
   if (!formData) {
     return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
@@ -37,7 +38,9 @@ export async function POST(req: NextRequest) {
   const ext = APP_CONFIG.photo.allowedExtensions.includes(rawExt) ? rawExt : "jpg";
   const storageKey = `${lockerId}/${randomUUID()}.${ext}`;
   const contentType = file.type || "image/jpeg";
+  logger.debug("[photos] file parsed", { lockerId, ext, size: file.size, contentType });
 
+  logger.debug("[photos] uploading to storage", { storageKey });
   let { error: uploadError } = await supabaseAdmin.storage
     .from(BUCKET)
     .upload(storageKey, file, { contentType });
@@ -45,12 +48,14 @@ export async function POST(req: NextRequest) {
   if (uploadError) {
     const msg = uploadError.message.toLowerCase();
     if (msg.includes("bucket") || msg.includes("not found")) {
+      logger.debug("[photos] bucket not found, creating bucket");
       try {
         await ensureBucket();
         const retry = await supabaseAdmin.storage
           .from(BUCKET)
           .upload(storageKey, file, { contentType });
         uploadError = retry.error;
+        logger.debug("[photos] retry upload after bucket creation", { ok: !retry.error });
       } catch (e) {
         logger.error("[photos] bucket creation failed", e);
         return NextResponse.json({ error: "Storage bucket setup failed" }, { status: 500 });
@@ -63,6 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
+  logger.debug("[photos] storage upload ok, inserting to DB", { storageKey });
   const { data, error: dbError } = await supabaseAdmin
     .from("locker_photos")
     .insert({ locker_id: lockerId, storage_key: storageKey, order_index: orderIndex })
@@ -74,6 +80,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  logger.debug("[photos] DB insert ok", { id: data.id });
   logger.info("[photos] uploaded", { id: data.id, lockerId, storageKey });
   return NextResponse.json(data, { status: 201 });
 }

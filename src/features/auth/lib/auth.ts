@@ -67,16 +67,20 @@ export async function setSessionCookies(res: NextResponse): Promise<void> {
 }
 
 export async function destroySession(): Promise<void> {
+  logger.debug("[auth] destroying session cookies");
   const cookieStore = await cookies();
   cookieStore.delete(ACCESS_COOKIE);
   cookieStore.delete(REFRESH_COOKIE);
+  logger.debug("[auth] session cookies deleted");
   logger.info("[auth] session destroyed");
 }
 
 export async function getSession(): Promise<boolean> {
+  logger.debug("[auth] getSession: reading cookies");
   const cookieStore = await cookies();
 
   const accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
+  logger.debug("[auth] getSession: access token present", { present: !!accessToken });
   if (accessToken) {
     try {
       const { payload } = await jwtVerify(accessToken, getSecret());
@@ -84,12 +88,14 @@ export async function getSession(): Promise<boolean> {
         logger.info("[auth] session valid via access token");
         return true;
       }
+      logger.debug("[auth] access token sub mismatch");
     } catch (e) {
       logger.debug("[auth] access token invalid, falling back to refresh token", e);
     }
   }
 
   const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
+  logger.debug("[auth] getSession: refresh token present", { present: !!refreshToken });
   if (!refreshToken) return false;
   try {
     const { payload } = await jwtVerify(refreshToken, getSecret());
@@ -97,6 +103,7 @@ export async function getSession(): Promise<boolean> {
       logger.info("[auth] session valid via refresh token");
       return true;
     }
+    logger.debug("[auth] refresh token sub mismatch");
     return false;
   } catch (e) {
     logger.warn("[auth] refresh token invalid or expired", e);

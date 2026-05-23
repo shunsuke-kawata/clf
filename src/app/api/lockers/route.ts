@@ -4,6 +4,7 @@ import { lockerSchema } from "@/features/locker/schemas/locker";
 import { logger } from "@/lib/logger";
 
 export async function GET() {
+  logger.debug("[lockers] list: querying DB");
   const { data, error } = await supabaseReader
     .from("lockers")
     .select("id, lat, lng, note, pricing, created_at, updated_at")
@@ -14,11 +15,13 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  logger.debug("[lockers] list: DB returned", { count: data?.length ?? 0 });
   logger.info("[lockers] list ok", { count: data?.length ?? 0 });
   return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
+  logger.debug("[lockers] create: parsing request body");
   const body = await req.json().catch(() => null);
   const parsed = lockerSchema.safeParse(body);
 
@@ -30,6 +33,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  logger.debug("[lockers] create: validation ok, inserting to DB", { lat: parsed.data.lat, lng: parsed.data.lng });
   const { data, error } = await supabaseAdmin
     .from("lockers")
     .insert(parsed.data)
@@ -41,6 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  logger.debug("[lockers] create: DB insert ok", { id: data.id });
   logger.info("[lockers] created", { id: data.id });
   return NextResponse.json(data, { status: 201 });
 }

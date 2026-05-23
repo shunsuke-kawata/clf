@@ -4,7 +4,7 @@ export const APP_CONFIG = {
     level:
       process.env.NEXT_PUBLIC_LOG_LEVEL?.toLowerCase() ??
       process.env.LOG_LEVEL?.toLowerCase() ??
-      "warn",
+      "info",
   },
   map: {
     defaultCenter: { lat: 35.6812, lng: 139.7671 } as const,
