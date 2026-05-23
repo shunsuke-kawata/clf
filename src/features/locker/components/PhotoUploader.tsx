@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
 import { API_ROUTES } from "@/lib/routes";
+import { generateId } from "@/lib/utils";
 
 type PendingPhoto = {
   id: string;
@@ -119,7 +120,7 @@ export const PhotoUploader = forwardRef<PhotoUploaderHandle, Props>(
       const files = e.target.files;
       if (!files || files.length === 0) return;
       const newPending: PendingPhoto[] = Array.from(files).map((file) => ({
-        id: crypto.randomUUID(),
+        id: generateId(),
         file,
         previewUrl: URL.createObjectURL(file),
       }));
