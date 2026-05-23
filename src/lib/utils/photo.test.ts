@@ -1,38 +1,52 @@
-/**
- * getPhotoUrl のユニットテスト
- *
- * 外部依存がない純粋関数のため、URL 組み立てのロジックを直接検証する。
- * バケット名 "locker-photos" がハードコードされているため、
- * それが変更された場合にテストが失敗してリグレッションを検知できる。
- */
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { describe, it, expect } from "vitest";
-import { getPhotoUrl } from "./photo";
+const mockConfig = {
+  isProd: false,
+  photo: { bucket: "locker-photos" },
+};
+
+vi.mock("@/lib/config", () => ({ APP_CONFIG: mockConfig }));
+
+const { getPhotoUrl } = await import("./photo");
 
 describe("getPhotoUrl", () => {
-  it("supabaseUrl と storageKey から正しい公開 URL を組み立てる", () => {
-    const url = getPhotoUrl("https://abc.supabase.co", "lockers/uuid-1/photo.jpg");
-    expect(url).toBe(
-      "https://abc.supabase.co/storage/v1/object/public/locker-photos/lockers/uuid-1/photo.jpg"
-    );
+  describe("開発環境（isProd=false）", () => {
+    beforeEach(() => { mockConfig.isProd = false; });
+
+    it("プロキシURL /api/photos/proxy?key=... を返す", () => {
+      const url = getPhotoUrl("http://127.0.0.1:54321", "lockers/uuid-1/photo.jpg");
+      expect(url).toBe("/api/photos/proxy?key=lockers%2Fuuid-1%2Fphoto.jpg");
+    });
+
+    it("storageKey にパス区切りがない場合もエンコードして返す", () => {
+      const url = getPhotoUrl("http://127.0.0.1:54321", "photo.jpg");
+      expect(url).toBe("/api/photos/proxy?key=photo.jpg");
+    });
+
+    it("supabaseUrl を使わずプロキシURLを返す", () => {
+      const url = getPhotoUrl("http://127.0.0.1:54321", "key");
+      expect(url).not.toContain("127.0.0.1");
+    });
   });
 
-  it("storageKey にパス区切りがなくてもそのまま結合する", () => {
-    const url = getPhotoUrl("https://abc.supabase.co", "photo.jpg");
-    expect(url).toBe(
-      "https://abc.supabase.co/storage/v1/object/public/locker-photos/photo.jpg"
-    );
-  });
+  describe("本番環境（isProd=true）", () => {
+    beforeEach(() => { mockConfig.isProd = true; });
 
-  it("バケット名 'locker-photos' が URL に含まれる", () => {
-    // バケット名変更時のリグレッション検知
-    const url = getPhotoUrl("https://example.supabase.co", "key");
-    expect(url).toContain("locker-photos");
-  });
+    it("Supabase Storage の直リンクを返す", () => {
+      const url = getPhotoUrl("https://abc.supabase.co", "lockers/uuid-1/photo.jpg");
+      expect(url).toBe(
+        "https://abc.supabase.co/storage/v1/object/public/locker-photos/lockers/uuid-1/photo.jpg"
+      );
+    });
 
-  it("supabaseUrl 末尾のスラッシュがない前提で正しく結合する", () => {
-    // URL の二重スラッシュが入らないことを確認
-    const url = getPhotoUrl("https://abc.supabase.co", "key");
-    expect(url).not.toContain("//storage");
+    it("バケット名 'locker-photos' が URL に含まれる", () => {
+      const url = getPhotoUrl("https://example.supabase.co", "key");
+      expect(url).toContain("locker-photos");
+    });
+
+    it("supabaseUrl 末尾のスラッシュがない前提で二重スラッシュが入らない", () => {
+      const url = getPhotoUrl("https://abc.supabase.co", "key");
+      expect(url).not.toContain("//storage");
+    });
   });
 });
