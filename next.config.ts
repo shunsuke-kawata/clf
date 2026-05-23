@@ -28,9 +28,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // ngrok 経由でのローカル開発アクセスを許可（iPhone で geolocation をテストするため）
+  // トンネル経由でのローカル開発アクセスを許可（iPhone で geolocation をテストするため）
   ...(isDev && {
-    allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok.io"],
+    allowedDevOrigins: [
+      "*.trycloudflare.com", // Cloudflare Quick Tunnel（アカウント不要）
+      "*.loca.lt",           // localtunnel（アカウント不要）
+      "*.ngrok-free.app",    // ngrok free（要アカウント）
+      "*.ngrok.io",          // ngrok paid（要アカウント）
+    ],
   }),
   async headers() {
     return [

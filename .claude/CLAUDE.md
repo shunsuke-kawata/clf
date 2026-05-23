@@ -146,21 +146,31 @@ pnpm test:run   # テスト（一回実行）
 
 ## iPhone でのローカル開発（geolocation テスト）
 
-iPhoneから `localhost` には直接アクセスできず、LAN IP（`http://192.168.x.x:3000`）経由はHTTPのためブラウザがgeolocationをブロックする。ngrokを使ってHTTPS付きトンネルURLを発行することで解決できる。
+iPhoneから `localhost` には直接アクセスできず、LAN IP（`http://192.168.x.x:3000`）経由はHTTPのためブラウザがgeolocationをブロックする。HTTPSトンネルを使ってiPhoneからアクセスする。
+
+### Cloudflare Quick Tunnel（推奨・アカウント不要）
 
 ```bash
-# 1. ngrok をインストール（初回のみ）
-brew install ngrok
+# 1. cloudflared をインストール（初回のみ）
+brew install cloudflared
 
 # 2. 開発サーバーを起動
 pnpm dev
 
-# 3. 別ターミナルで ngrok を起動
-ngrok http 3000
+# 3. 別ターミナルでトンネルを起動
+cloudflared tunnel --url http://localhost:3000
 ```
 
-ngrok 起動後に表示される `https://xxxx.ngrok-free.app` をiPhoneのブラウザで開く。
-`next.config.ts` の `allowedDevOrigins` に `*.ngrok-free.app` が設定済みなので追加設定は不要。
+起動後に表示される `https://xxxx.trycloudflare.com` をiPhoneのブラウザで開く。
+`next.config.ts` の `allowedDevOrigins` に設定済みなので追加設定は不要。
+
+### localtunnel（アカウント不要・インストール不要）
+
+```bash
+npx localtunnel --port 3000
+```
+
+`https://xxxx.loca.lt` のURLが発行される。初回アクセス時にパスワード入力画面が出る場合は、表示されているIPアドレスをそのまま入力する。
 
 ## テスト方針
 
