@@ -25,57 +25,263 @@
 | デプロイ | Vercel |
 | パッケージ管理 | pnpm |
 
-## 環境構築
+---
 
-### 必要なもの
+## ローカル開発環境のセットアップ
 
-- Node.js 20 以上
-- pnpm
-- Supabase プロジェクト（無料プランで可）
+### 1. 必要なツールをインストール
 
-### 1. リポジトリをクローン
+#### Homebrew（macOS のパッケージマネージャー）
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+#### Docker Desktop
+
+Supabase のローカル環境は Docker で動作します。
+
+[Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) をダウンロードしてインストールし、起動しておいてください。
+
+#### Node.js（v20 以上）
+
+```bash
+brew install node
+```
+
+インストール確認:
+
+```bash
+node --version   # v20.x.x 以上
+```
+
+#### pnpm（パッケージマネージャー）
+
+```bash
+npm install -g pnpm
+```
+
+インストール確認:
+
+```bash
+pnpm --version   # 9.x.x 以上
+```
+
+#### Supabase CLI
+
+```bash
+brew install supabase/tap/supabase
+```
+
+インストール確認:
+
+```bash
+supabase --version
+```
+
+#### cloudflared（HTTPS トンネル）
+
+iPhone など外部デバイスから HTTPS でアクセスするために使用します。
+
+```bash
+brew install cloudflared
+```
+
+インストール確認:
+
+```bash
+cloudflared --version
+```
+
+---
+
+### 2. リポジトリをクローン
 
 ```bash
 git clone https://github.com/shunsuke-kawata/clf.git
 cd clf
 ```
 
-### 2. 依存パッケージをインストール
+### 3. 依存パッケージをインストール
 
 ```bash
 pnpm install
 ```
 
-### 3. 環境変数を設定
+### 4. 環境変数を設定
 
-`.env.local` をプロジェクトルートに作成し、以下を設定します。
+プロジェクトルートに `.env.local` を作成します。
+
+```bash
+touch .env.local
+```
+
+次のステップ（Supabase 起動後）で取得したキーを設定します。
+
+### 5. Supabase をローカルで起動してキーを取得
+
+```bash
+supabase start
+```
+
+起動後に以下のような出力が表示されます（初回は数分かかります）。
+
+```
+API URL: http://127.0.0.1:54321
+anon key: eyJhbGciOiJIUzI1NiIsInR5...
+service_role key: eyJhbGciOiJIUzI1NiIsInR5...
+```
+
+この値を `.env.local` に設定します。
 
 ```env
-# Supabase
-SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+# Supabase（ローカル開発用）
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<上記の anon key>
+SUPABASE_SERVICE_ROLE_KEY=<上記の service_role key>
 
 # 認証
-APP_PASSWORD=your-app-password
-SESSION_SECRET=your-random-string-32-chars-or-more
+APP_PASSWORD=任意のパスワード
+SESSION_SECRET=<32文字以上のランダム文字列>
 ```
+
+`SESSION_SECRET` は以下で生成できます。
+
+```bash
+openssl rand -base64 32
+```
+
+> `supabase start` を停止・再起動してもキーは変わりません。
+
+### 6. Supabase Storage のバケットを作成
+
+ローカルの Supabase ダッシュボード（[http://127.0.0.1:54323](http://127.0.0.1:54323)）を開き、  
+**Storage → New bucket** で以下を作成します。
+
+| 項目 | 値 |
+|------|----|
+| バケット名 | `locker-photos` |
+| Public | オン |
+
+> DBスキーマ（テーブル作成）はマイグレーションファイルから自動適用されるため、手動実行不要です。
+
+---
+
+## 開発サーバーの起動
+
+Docker Desktop が起動していることを確認してから実行します。
+
+```bash
+make dev
+```
+
+このコマンド一つで以下がすべて起動します。
+
+1. Supabase（ローカル DB / Storage）
+2. Cloudflare HTTPS トンネル（iPhone などからのアクセス用）
+3. Next.js 開発サーバー（localhost:3000）
+
+ターミナルに以下のように表示されます。
+
+```
+Cloudflare tunnel 起動中.....
+  HTTPS: https://xxxx.trycloudflare.com
+```
+
+- **ブラウザ（PC）**: [http://localhost:3000](http://localhost:3000)
+- **iPhone / スマートフォン**: 上記 HTTPS URL（現在地機能を使う場合は必須）
+
+---
+
+## make コマンド一覧
+
+| コマンド | 説明 |
+|----------|------|
+| `make dev` | 開発環境をフルで起動（Supabase + Cloudflare tunnel + Next.js） |
+| `make stop` | すべてのサービスを停止（Supabase + Cloudflare tunnel + Next.js） |
+| `make db-start` | Supabase のみ起動 |
+| `make db-stop` | Supabase のみ停止 |
+| `make db-status` | Supabase の起動状態を確認 |
+
+### 各コマンドの詳細
+
+#### `make dev`
+
+```bash
+make dev
+```
+
+- Supabase が未起動なら自動起動（起動済みならスキップ）
+- 既存の Cloudflare tunnel を再起動してHTTPS URLを表示
+- ポート 3000 が使用中なら既存プロセスを終了してから Next.js を起動
+- ターミナルに HTTPS URL が表示されるので、そのまま iPhone でアクセスできる
+
+#### `make stop`
+
+```bash
+make stop
+```
+
+- Supabase を停止
+- Cloudflare tunnel を停止
+- Next.js（ポート 3000）を停止
+
+#### `make db-start` / `make db-stop`
+
+```bash
+make db-start   # Supabase のみ起動
+make db-stop    # Supabase のみ停止
+```
+
+Next.js だけを手動で起動したい場合などに使用します。
+
+#### `make db-status`
+
+```bash
+make db-status
+```
+
+Supabase の起動状態・各サービスのポートを確認できます。
+
+---
+
+## pnpm コマンド
+
+| コマンド | 説明 |
+|----------|------|
+| `pnpm dev` | Next.js 開発サーバーのみ起動（Supabase は別途起動が必要） |
+| `pnpm build` | 本番ビルド |
+| `pnpm start` | 本番ビルドのサーバー起動 |
+| `pnpm test` | テスト実行（watch モード） |
+| `pnpm test:run` | テスト実行（一回のみ） |
+| `pnpm test:coverage` | カバレッジレポート付きテスト |
+
+---
+
+## デプロイ
+
+`main` ブランチへのプッシュで Vercel に自動デプロイされます。
+
+### Vercel の環境変数設定
+
+Vercel ダッシュボード → Settings → Environment Variables に以下を登録します。
 
 | 変数名 | 取得場所 |
 |--------|---------|
-| `SUPABASE_URL` | Supabase ダッシュボード → Settings → API → Project URL |
-| `ANON_KEY` | Supabase ダッシュボード → Settings → API → anon public |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase ダッシュボード → Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase ダッシュボード → Settings → API → anon public |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase ダッシュボード → Settings → API → service_role |
 | `APP_PASSWORD` | 任意のパスワード（投稿・編集時に使用） |
-| `SESSION_SECRET` | 32文字以上のランダム文字列（例: `openssl rand -base64 32` で生成） |
+| `SESSION_SECRET` | 32文字以上のランダム文字列（`openssl rand -base64 32`） |
 
-### 4. Supabase のテーブルを作成
+### Supabase 本番テーブルの作成
 
 Supabase ダッシュボードの SQL Editor で以下を実行します。
 
 ```sql
 CREATE TABLE lockers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
   lat DOUBLE PRECISION NOT NULL,
   lng DOUBLE PRECISION NOT NULL,
   note TEXT,
@@ -93,47 +299,11 @@ CREATE TABLE locker_photos (
 );
 ```
 
-### 5. Supabase Storage のバケットを作成
+### Supabase Storage のバケット作成（本番）
 
 Supabase ダッシュボード → Storage → New bucket で以下を作成します。
 
-- バケット名: `locker-photos`
-- Public: オン
-
-## 開発サーバーの起動
-
-```bash
-pnpm dev
-```
-
-[http://localhost:3000](http://localhost:3000) をブラウザで開きます。
-
-### iPhone / スマートフォンからのアクセス
-
-スマートフォンから開発環境にアクセスする場合は、同一ネットワーク内のPCのIPアドレスを使用します。
-
-```bash
-# PCのIPアドレスを確認
-ipconfig getifaddr en0   # Mac
-
-# アクセス例
-http://192.168.x.x:3000
-```
-
-> **注意**: HTTP + 非localhost 環境では位置情報（Geolocation API）が使用できません。
-> スマートフォンで現在地機能を使いたい場合は [Cloudflare Quick Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) などでHTTPS化してください。
->
-> ```bash
-> cloudflared tunnel --url http://localhost:3000
-> ```
-
-## ビルド
-
-```bash
-pnpm build
-```
-
-## デプロイ
-
-`main` ブランチへのプッシュで Vercel に自動デプロイされます。
-Vercel の環境変数設定に `.env.local` の内容を登録してください。
+| 項目 | 値 |
+|------|----|
+| バケット名 | `locker-photos` |
+| Public | オン |
