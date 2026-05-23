@@ -3,23 +3,25 @@ import { SignJWT, jwtVerify } from "jose";
 import { logger } from "@/lib/logger";
 import { serverEnv } from "@/lib/env";
 import { APP_CONFIG } from "@/lib/config";
-import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/features/auth/lib/auth";
+import { ACCESS_COOKIE, REFRESH_COOKIE, type SessionRole } from "@/features/auth/lib/auth";
 
 export async function POST(req: NextRequest) {
   logger.debug("[auth/refresh] request received");
   const secretBytes = new TextEncoder().encode(serverEnv.SESSION_SECRET);
   const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value ?? "";
 
+  let role: SessionRole = "user";
   try {
     const { payload } = await jwtVerify(refreshToken, secretBytes);
     if (payload.sub !== REFRESH_COOKIE) throw new Error("Invalid subject");
-    logger.debug("[auth/refresh] refresh token verified");
+    role = payload["role"] === "admin" ? "admin" : "user";
+    logger.debug("[auth/refresh] refresh token verified", { role });
   } catch (e) {
     logger.warn("[auth/refresh] invalid refresh token", e);
     return NextResponse.json({ error: "Invalid refresh token" }, { status: 401 });
   }
 
-  const newAccessToken = await new SignJWT({})
+  const newAccessToken = await new SignJWT({ role })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(ACCESS_COOKIE)
     .setIssuedAt()
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
     .sign(secretBytes);
   logger.debug("[auth/refresh] new access token signed");
 
-  logger.info("[auth/refresh] access token refreshed");
+  logger.info("[auth/refresh] access token refreshed", { role });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(ACCESS_COOKIE, newAccessToken, {
     httpOnly: true,
