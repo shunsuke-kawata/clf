@@ -198,6 +198,25 @@ src/features/locker/schemas/locker.test.ts  ← 隣に置く
 - **Interface Segregation**: クライアントが使わないメソッドへの依存を強制しない
 - **Dependency Inversion**: 上位モジュールは下位モジュールに依存せず、抽象に依存する
 
+## 環境の切り分け
+
+`APP_CONFIG` に `isProd` / `isLocal` フラグが用意されている。環境によって挙動を変える場合はこれを使う。
+
+```ts
+import { APP_CONFIG } from "@/lib/config";
+
+// ローカルのみ実行
+if (APP_CONFIG.isLocal) { ... }
+
+// 本番のみ実行
+if (APP_CONFIG.isProd) { ... }
+```
+
+| フラグ | 値 | 用途例 |
+|--------|----|--------|
+| `APP_CONFIG.isLocal` | `NODE_ENV !== "production"` | HTTP LAN接続でのgeolocation許可、デバッグ専用処理 |
+| `APP_CONFIG.isProd` | `NODE_ENV === "production"` | セキュリティチェック強化、外部サービス呼び出し制限 |
+
 ## 注意事項
 
 - `lib/supabase/server.ts` はサーバー専用（service_role key）。クライアントからimportしない

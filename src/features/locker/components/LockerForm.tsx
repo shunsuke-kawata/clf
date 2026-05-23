@@ -73,8 +73,8 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
     setGeoState("loading");
     setGeoError("");
 
-    if (!window.isSecureContext) {
-      logger.warn("[LockerForm] geolocation unavailable: insecure context (HTTP + non-localhost)");
+    if (!APP_CONFIG.isLocal && !window.isSecureContext) {
+      logger.warn("[LockerForm] geolocation unavailable: insecure context");
       setGeoError("HTTPSでない接続では現在地を取得できません。地図から場所を指定してください。");
       setGeoState("error");
       setLocationMode("pin");
