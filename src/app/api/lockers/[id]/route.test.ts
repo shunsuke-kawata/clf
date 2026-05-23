@@ -1,14 +1,15 @@
-/**
- * GET・PUT・DELETE /api/lockers/[id] のルートハンドラーテスト
- *
- * Supabase の PGRST116 エラーコード（行が見つからない）を 404 に変換する分岐と、
- * その他のエラーを 500 に変換する分岐を中心に検証する。
- */
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-const { mockChain, mockFrom } = vi.hoisted(() => {
+const { mockGetSessionRole } = vi.hoisted(() => ({
+  mockGetSessionRole: vi.fn<() => Promise<"admin" | "user" | null>>(),
+}));
+
+vi.mock("@/features/auth/lib/auth", () => ({
+  getSessionRole: mockGetSessionRole,
+}));
+
+const { mockChain, mockFrom, mockStorage } = vi.hoisted(() => {
   const mockChain = {
     select: vi.fn().mockReturnThis(),
     order: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -17,20 +18,30 @@ const { mockChain, mockFrom } = vi.hoisted(() => {
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
   };
-  return { mockChain, mockFrom: vi.fn().mockReturnValue(mockChain) };
+  const mockStorageBucket = { remove: vi.fn().mockResolvedValue({ error: null }) };
+  const mockStorage = { from: vi.fn().mockReturnValue(mockStorageBucket) };
+  return { mockChain, mockFrom: vi.fn().mockReturnValue(mockChain), mockStorage };
 });
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseReader: { from: mockFrom },
-  supabaseAdmin: { from: mockFrom },
+  supabaseAdmin: { from: mockFrom, storage: mockStorage },
 }));
 
 import { GET, PUT, DELETE } from "./route";
 
-/** Route Handler の第 2 引数として渡す params ヘルパー */
 function makeParams(id: string) {
   return { params: Promise.resolve({ id }) };
+}
+
+function makeRequest(method: string, id: string, body?: unknown): NextRequest {
+  return new NextRequest(`http://localhost/api/lockers/${id}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
 }
 
 beforeEach(() => {
@@ -40,7 +51,9 @@ beforeEach(() => {
   mockChain.insert.mockReturnThis();
   mockChain.update.mockReturnThis();
   mockChain.delete.mockReturnThis();
+  mockChain.not.mockReturnThis();
   mockFrom.mockReturnValue(mockChain);
+  mockStorage.from.mockReturnValue({ remove: vi.fn().mockResolvedValue({ error: null }) });
 });
 
 // ─────────────────────────────────────────────
@@ -49,46 +62,25 @@ beforeEach(() => {
 
 describe("GET /api/lockers/[id]", () => {
   it("ロッカーが存在する場合は 200 とデータを返す", async () => {
-    const mockLocker = {
-      id: "uuid-1",
-      lat: 35.0,
-      lng: 135.0,
-      pricing: [300],
-      locker_photos: [],
-    };
+    const mockLocker = { id: "uuid-1", lat: 35.0, lng: 135.0, pricing: [300], locker_photos: [] };
     mockChain.single.mockResolvedValueOnce({ data: mockLocker, error: null });
 
-    const req = new NextRequest("http://localhost/api/lockers/uuid-1");
-    const res = await GET(req, makeParams("uuid-1"));
-
+    const res = await GET(makeRequest("GET", "uuid-1"), makeParams("uuid-1"));
     expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.id).toBe("uuid-1");
+    expect((await res.json()).id).toBe("uuid-1");
   });
 
   it("存在しない ID は PGRST116 エラーを 404 に変換する", async () => {
-    // Supabase が .single() で行を見つけられない場合に返す固有エラーコード
-    mockChain.single.mockResolvedValueOnce({
-      data: null,
-      error: { code: "PGRST116", message: "no rows" },
-    });
+    mockChain.single.mockResolvedValueOnce({ data: null, error: { code: "PGRST116", message: "no rows" } });
 
-    const req = new NextRequest("http://localhost/api/lockers/not-exist");
-    const res = await GET(req, makeParams("not-exist"));
-
+    const res = await GET(makeRequest("GET", "not-exist"), makeParams("not-exist"));
     expect(res.status).toBe(404);
   });
 
   it("PGRST116 以外の Supabase エラーは 500 を返す", async () => {
-    // ネットワーク障害など PGRST116 以外のエラーは 500 にマッピングされる
-    mockChain.single.mockResolvedValueOnce({
-      data: null,
-      error: { code: "PGRST999", message: "internal error" },
-    });
+    mockChain.single.mockResolvedValueOnce({ data: null, error: { code: "PGRST999", message: "internal error" } });
 
-    const req = new NextRequest("http://localhost/api/lockers/uuid-1");
-    const res = await GET(req, makeParams("uuid-1"));
-
+    const res = await GET(makeRequest("GET", "uuid-1"), makeParams("uuid-1"));
     expect(res.status).toBe(500);
   });
 });
@@ -98,49 +90,33 @@ describe("GET /api/lockers/[id]", () => {
 // ─────────────────────────────────────────────
 
 describe("PUT /api/lockers/[id]", () => {
-  function makeRequest(id: string, body: unknown) {
-    return new NextRequest(`http://localhost/api/lockers/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  }
+  it("認証なしで 401 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue(null);
+    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }), makeParams("uuid-1"));
+    expect(res.status).toBe(401);
+  });
 
-  it("有効なデータで 200 と更新後のロッカーを返す", async () => {
+  it("user 認証で有効なデータなら 200 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue("user");
     const updated = { id: "uuid-1", lat: 36.0, lng: 136.0, pricing: [500] };
     mockChain.single.mockResolvedValueOnce({ data: updated, error: null });
 
-    const res = await PUT(
-      makeRequest("uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }),
-      makeParams("uuid-1")
-    );
-
+    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }), makeParams("uuid-1"));
     expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.lat).toBe(36.0);
+    expect((await res.json()).lat).toBe(36.0);
   });
 
-  it("バリデーション失敗の場合は 400 を返す", async () => {
-    // pricing に文字列が混入するなど schema を通過しないデータ
-    const res = await PUT(
-      makeRequest("uuid-1", { lat: "invalid", lng: 135.0, pricing: [300] }),
-      makeParams("uuid-1")
-    );
-
+  it("バリデーション失敗で 400 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue("user");
+    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: "invalid", lng: 135.0, pricing: [300] }), makeParams("uuid-1"));
     expect(res.status).toBe(400);
   });
 
   it("Supabase update がエラーを返した場合は 500 を返す", async () => {
-    mockChain.single.mockResolvedValueOnce({
-      data: null,
-      error: { message: "update failed" },
-    });
+    mockGetSessionRole.mockResolvedValue("user");
+    mockChain.single.mockResolvedValueOnce({ data: null, error: { message: "update failed" } });
 
-    const res = await PUT(
-      makeRequest("uuid-1", { lat: 35.0, lng: 135.0, pricing: [300] }),
-      makeParams("uuid-1")
-    );
-
+    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: 35.0, lng: 135.0, pricing: [300] }), makeParams("uuid-1"));
     expect(res.status).toBe(500);
   });
 });
@@ -150,28 +126,33 @@ describe("PUT /api/lockers/[id]", () => {
 // ─────────────────────────────────────────────
 
 describe("DELETE /api/lockers/[id]", () => {
-  it("削除成功時は 204 を返す（ボディなし）", async () => {
-    // .delete().eq() の終端は single() ではなく delete 自体が Promise を返す
+  it("認証なしで 401 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue(null);
+    const res = await DELETE(makeRequest("DELETE", "uuid-1"), makeParams("uuid-1"));
+    expect(res.status).toBe(401);
+  });
+
+  it("user 権限で 403 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue("user");
+    const res = await DELETE(makeRequest("DELETE", "uuid-1"), makeParams("uuid-1"));
+    expect(res.status).toBe(403);
+  });
+
+  it("admin 権限で削除成功時に 204 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue("admin");
+    mockChain.eq.mockResolvedValueOnce({ data: [], error: null });
     mockChain.eq.mockResolvedValueOnce({ error: null });
 
-    const req = new NextRequest("http://localhost/api/lockers/uuid-1", {
-      method: "DELETE",
-    });
-    const res = await DELETE(req, makeParams("uuid-1"));
-
+    const res = await DELETE(makeRequest("DELETE", "uuid-1"), makeParams("uuid-1"));
     expect(res.status).toBe(204);
   });
 
-  it("Supabase delete がエラーを返した場合は 500 を返す", async () => {
-    mockChain.eq.mockResolvedValueOnce({
-      error: { message: "delete failed" },
-    });
+  it("admin 権限で DB エラー時に 500 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue("admin");
+    mockChain.eq.mockResolvedValueOnce({ data: [], error: null });
+    mockChain.eq.mockResolvedValueOnce({ error: { message: "delete failed" } });
 
-    const req = new NextRequest("http://localhost/api/lockers/uuid-1", {
-      method: "DELETE",
-    });
-    const res = await DELETE(req, makeParams("uuid-1"));
-
+    const res = await DELETE(makeRequest("DELETE", "uuid-1"), makeParams("uuid-1"));
     expect(res.status).toBe(500);
   });
 });

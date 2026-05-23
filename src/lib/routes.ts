@@ -18,12 +18,17 @@ export const API_ROUTES = {
     logout: "/api/auth/logout",
     refresh: "/api/auth/refresh",
   },
+  admin: {
+    reset: "/api/admin/reset",
+  },
 } as const;
 
 export const PAGE_ROUTES = {
   home: "/",
   login: "/login",
+  adminLogin: "/login/admin",
+  admin: "/admin",
+  newLocker: "/new",
   lockerDetail: (id: string) => `/lockers/${id}`,
-  adminNew: "/admin/new",
-  adminEdit: (id: string) => `/admin/${id}/edit`,
+  lockerEdit: (id: string) => `/lockers/${id}/edit`,
 } as const;

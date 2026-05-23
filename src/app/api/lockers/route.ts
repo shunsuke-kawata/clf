@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseReader, supabaseAdmin } from "@/lib/supabase/server";
 import { lockerSchema } from "@/features/locker/schemas/locker";
+import { getSessionRole } from "@/features/auth/lib/auth";
 import { logger } from "@/lib/logger";
 
 export async function GET() {
@@ -21,6 +22,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const role = await getSessionRole(req);
+  if (!role) {
+    logger.warn("[lockers] create: unauthorized");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   logger.debug("[lockers] create: parsing request body");
   const body = await req.json().catch(() => null);
   const parsed = lockerSchema.safeParse(body);
