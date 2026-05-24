@@ -64,6 +64,8 @@ function FlyToController({
     )
       return;
     prevTarget.current = target;
+    const dist = map.distance(map.getCenter(), [target.lat, target.lng]);
+    if (dist < APP_CONFIG.map.currentLocationSkipDistanceMeters && map.getZoom() >= APP_CONFIG.map.pickerFlyZoom) return;
     map.flyTo([target.lat, target.lng], APP_CONFIG.map.pickerFlyZoom, { duration: 0.8 });
   }, [target, map]);
 
@@ -93,6 +95,7 @@ export default function MapPicker({
       <TileLayer
         attribution={APP_CONFIG.map.tileAttribution}
         url={APP_CONFIG.map.tileUrl}
+        maxNativeZoom={APP_CONFIG.map.maxNativeZoom}
         maxZoom={APP_CONFIG.map.maxZoom}
       />
       <MapResizer />

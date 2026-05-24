@@ -235,6 +235,7 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         <TileLayer
           attribution={APP_CONFIG.map.tileAttribution}
           url={APP_CONFIG.map.tileUrl}
+          maxNativeZoom={APP_CONFIG.map.maxNativeZoom}
           maxZoom={APP_CONFIG.map.maxZoom}
         />
         <MapResizeHandler />
