@@ -14,7 +14,9 @@ export async function getLockers(): Promise<Locker[]> {
 export async function getLockerById(id: string): Promise<LockerWithPhotos | null> {
   const { data, error } = await supabaseReader
     .from("lockers")
-    .select("id, lat, lng, note, pricing, created_at, updated_at, locker_photos(id, storage_key, order_index)")
+    .select(
+      "id, lat, lng, note, pricing, created_at, updated_at, locker_photos(id, storage_key, order_index)"
+    )
     .eq("id", id)
     .single();
 

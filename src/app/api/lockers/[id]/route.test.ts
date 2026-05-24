@@ -71,14 +71,20 @@ describe("GET /api/lockers/[id]", () => {
   });
 
   it("存在しない ID は PGRST116 エラーを 404 に変換する", async () => {
-    mockChain.single.mockResolvedValueOnce({ data: null, error: { code: "PGRST116", message: "no rows" } });
+    mockChain.single.mockResolvedValueOnce({
+      data: null,
+      error: { code: "PGRST116", message: "no rows" },
+    });
 
     const res = await GET(makeRequest("GET", "not-exist"), makeParams("not-exist"));
     expect(res.status).toBe(404);
   });
 
   it("PGRST116 以外の Supabase エラーは 500 を返す", async () => {
-    mockChain.single.mockResolvedValueOnce({ data: null, error: { code: "PGRST999", message: "internal error" } });
+    mockChain.single.mockResolvedValueOnce({
+      data: null,
+      error: { code: "PGRST999", message: "internal error" },
+    });
 
     const res = await GET(makeRequest("GET", "uuid-1"), makeParams("uuid-1"));
     expect(res.status).toBe(500);
@@ -92,7 +98,10 @@ describe("GET /api/lockers/[id]", () => {
 describe("PUT /api/lockers/[id]", () => {
   it("認証なしで 401 を返す", async () => {
     mockGetSessionRole.mockResolvedValue(null);
-    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }), makeParams("uuid-1"));
+    const res = await PUT(
+      makeRequest("PUT", "uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }),
+      makeParams("uuid-1")
+    );
     expect(res.status).toBe(401);
   });
 
@@ -101,14 +110,20 @@ describe("PUT /api/lockers/[id]", () => {
     const updated = { id: "uuid-1", lat: 36.0, lng: 136.0, pricing: [500] };
     mockChain.single.mockResolvedValueOnce({ data: updated, error: null });
 
-    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }), makeParams("uuid-1"));
+    const res = await PUT(
+      makeRequest("PUT", "uuid-1", { lat: 36.0, lng: 136.0, pricing: [500] }),
+      makeParams("uuid-1")
+    );
     expect(res.status).toBe(200);
     expect((await res.json()).lat).toBe(36.0);
   });
 
   it("バリデーション失敗で 400 を返す", async () => {
     mockGetSessionRole.mockResolvedValue("user");
-    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: "invalid", lng: 135.0, pricing: [300] }), makeParams("uuid-1"));
+    const res = await PUT(
+      makeRequest("PUT", "uuid-1", { lat: "invalid", lng: 135.0, pricing: [300] }),
+      makeParams("uuid-1")
+    );
     expect(res.status).toBe(400);
   });
 
@@ -116,7 +131,10 @@ describe("PUT /api/lockers/[id]", () => {
     mockGetSessionRole.mockResolvedValue("user");
     mockChain.single.mockResolvedValueOnce({ data: null, error: { message: "update failed" } });
 
-    const res = await PUT(makeRequest("PUT", "uuid-1", { lat: 35.0, lng: 135.0, pricing: [300] }), makeParams("uuid-1"));
+    const res = await PUT(
+      makeRequest("PUT", "uuid-1", { lat: 35.0, lng: 135.0, pricing: [300] }),
+      makeParams("uuid-1")
+    );
     expect(res.status).toBe(500);
   });
 });

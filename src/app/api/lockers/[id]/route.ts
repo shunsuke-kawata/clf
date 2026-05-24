@@ -45,10 +45,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   if (!parsed.success) {
     logger.warn("[lockers] update validation failed", { id, error: parsed.error.flatten() });
-    return NextResponse.json(
-      { error: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
   logger.debug("[lockers] update: validation ok, updating DB", { id });
@@ -101,10 +98,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
 
   logger.debug("[lockers] delete: deleting from DB", { id });
-  const { error } = await supabaseAdmin
-    .from("lockers")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabaseAdmin.from("lockers").delete().eq("id", id);
 
   if (error) {
     logger.error("[lockers] delete failed", { id, error });

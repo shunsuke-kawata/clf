@@ -10,18 +10,19 @@ export const APP_CONFIG = {
   map: {
     defaultCenter: { lat: 35.6812, lng: 139.7671 } as const,
     defaultZoom: 15,
-    pickerZoom: 19,
-    pickerFlyZoom: 16,
+    maxNativeZoom: 19,
+    maxZoom: 21,
+    currentLocationZoom: 16,
+    currentLocationSkipDistanceMeters: 50,
+    pickerZoom: 21,
+    pickerFlyZoom: 19,
     geolocationTimeout: 10_000,
     tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    tileAttribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     leafletIcons: {
-      iconRetinaUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+      iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
       iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-      shadowUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     },
   },
   auth: {

@@ -4,17 +4,17 @@
 
 ## 技術スタック
 
-| 用途 | 技術 |
-|------|------|
-| フレームワーク | Next.js 16 (App Router) |
-| 言語 | TypeScript（`any`禁止、`unknown`を使う） |
-| スタイル | Tailwind CSS v4 + shadcn/ui |
-| 地図 | Leaflet + react-leaflet（SSR無効） |
-| DB / Storage | Supabase（PostgreSQL + Storage） |
-| バリデーション | Zod + react-hook-form + @hookform/resolvers |
-| 会場検索 | Nominatim（OpenStreetMap）- 無料・APIキー不要 |
-| デプロイ | Vercel（mainブランチ自動デプロイ） |
-| パッケージ管理 | pnpm |
+| 用途           | 技術                                          |
+| -------------- | --------------------------------------------- |
+| フレームワーク | Next.js 16 (App Router)                       |
+| 言語           | TypeScript（`any`禁止、`unknown`を使う）      |
+| スタイル       | Tailwind CSS v4 + shadcn/ui                   |
+| 地図           | Leaflet + react-leaflet（SSR無効）            |
+| DB / Storage   | Supabase（PostgreSQL + Storage）              |
+| バリデーション | Zod + react-hook-form + @hookform/resolvers   |
+| 会場検索       | Nominatim（OpenStreetMap）- 無料・APIキー不要 |
+| デプロイ       | Vercel（mainブランチ自動デプロイ）            |
+| パッケージ管理 | pnpm                                          |
 
 ## ディレクトリ構成
 
@@ -66,13 +66,13 @@ src/
 
 `.env.local` に設定。
 
-| 変数名 | 内容 |
-|--------|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | SupabaseプロジェクトURL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon publicキー |
-| `SUPABASE_SERVICE_ROLE_KEY` | service_roleキー（API Routeのみ使用） |
-| `APP_PASSWORD` | 投稿・編集に必要なパスワード |
-| `SESSION_SECRET` | Cookie署名用ランダム文字列（32文字以上） |
+| 変数名                          | 内容                                     |
+| ------------------------------- | ---------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | SupabaseプロジェクトURL                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon publicキー                 |
+| `SUPABASE_SERVICE_ROLE_KEY`     | service_roleキー（API Routeのみ使用）    |
+| `APP_PASSWORD`                  | 投稿・編集に必要なパスワード             |
+| `SESSION_SECRET`                | Cookie署名用ランダム文字列（32文字以上） |
 
 ## 認証方針
 
@@ -178,16 +178,23 @@ npx localtunnel --port 3000
 
 ### 新規機能を実装するときのルール
 
+**ユーザーが操作する機能を追加・変更した場合は、`/help` ページの説明も必ず更新する。**
+
+- 説明を追加・更新する対象: `src/features/help/components/HelpContent.tsx`
+- 既存セクションに収まる変更（例: ボタンの挙動変更）→ 該当セクションの説明文を修正する
+- 新しい操作フローが生まれる変更（例: 新機能の追加）→ 既存セクションに追記、またはセクション自体を追加する
+- `HELP_SECTIONS` 配列を変更した場合は `HelpSidebar` の目次も自動的に追従するため追加作業は不要
+
 **純粋なロジックを含む実装には必ずテストを追加する。**
 
-| 対象 | テストの要否 |
-|------|-------------|
-| Zod スキーマ | **必須**（バリデーション境界値を網羅する） |
-| 認証ロジック（JWT・パスワード検証） | **必須** |
-| API Route Handler | **必須**（正常系・バリデーション失敗・DB エラーの3軸） |
-| 純粋関数（utils など） | **必須** |
-| Leaflet/地図コンポーネント | 不要（jsdom では動作不安定のため対象外） |
-| UI コンポーネント全般 | 原則不要（E2E の領域） |
+| 対象                                | テストの要否                                           |
+| ----------------------------------- | ------------------------------------------------------ |
+| Zod スキーマ                        | **必須**（バリデーション境界値を網羅する）             |
+| 認証ロジック（JWT・パスワード検証） | **必須**                                               |
+| API Route Handler                   | **必須**（正常系・バリデーション失敗・DB エラーの3軸） |
+| 純粋関数（utils など）              | **必須**                                               |
+| Leaflet/地図コンポーネント          | 不要（jsdom では動作不安定のため対象外）               |
+| UI コンポーネント全般               | 原則不要（E2E の領域）                                 |
 
 ### テストファイルの置き場
 
@@ -223,14 +230,15 @@ src/features/locker/schemas/locker.test.ts  ← 隣に置く
 
 デフォルトのログレベルは `warn`。環境変数 `LOG_LEVEL` または `NEXT_PUBLIC_LOG_LEVEL` で上書き可能。
 
-| レベル | 用途 |
-|--------|------|
-| `logger.error` | 想定外のエラー（DB障害・外部API失敗・例外） |
-| `logger.warn` | 期待される失敗（認証失敗・バリデーション失敗・トークン期限切れ） |
-| `logger.info` | 主要フローの正常完了（セッション発行・ロッカー作成・写真アップロード） |
-| `logger.debug` | 開発時のみ必要な詳細情報（クエリ結果件数・中間値） |
+| レベル         | 用途                                                                   |
+| -------------- | ---------------------------------------------------------------------- |
+| `logger.error` | 想定外のエラー（DB障害・外部API失敗・例外）                            |
+| `logger.warn`  | 期待される失敗（認証失敗・バリデーション失敗・トークン期限切れ）       |
+| `logger.info`  | 主要フローの正常完了（セッション発行・ロッカー作成・写真アップロード） |
+| `logger.debug` | 開発時のみ必要な詳細情報（クエリ結果件数・中間値）                     |
 
 新規機能を実装するときは、以下のタイミングで適切なレベルのログを追加する。
+
 - リクエスト処理の正常完了 → `logger.info`
 - バリデーション失敗・認証拒否 → `logger.warn`
 - DB・外部API・予期しない例外 → `logger.error`
@@ -258,10 +266,10 @@ if (APP_CONFIG.isLocal) { ... }
 if (APP_CONFIG.isProd) { ... }
 ```
 
-| フラグ | 値 | 用途例 |
-|--------|----|--------|
-| `APP_CONFIG.isLocal` | `NODE_ENV !== "production"` | HTTP LAN接続でのgeolocation許可、デバッグ専用処理 |
-| `APP_CONFIG.isProd` | `NODE_ENV === "production"` | セキュリティチェック強化、外部サービス呼び出し制限 |
+| フラグ               | 値                          | 用途例                                             |
+| -------------------- | --------------------------- | -------------------------------------------------- |
+| `APP_CONFIG.isLocal` | `NODE_ENV !== "production"` | HTTP LAN接続でのgeolocation許可、デバッグ専用処理  |
+| `APP_CONFIG.isProd`  | `NODE_ENV === "production"` | セキュリティチェック強化、外部サービス呼び出し制限 |
 
 ## 写真URLの生成ルール
 

@@ -1,12 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
-import {
-  checkPassword,
-  getSession,
-  ACCESS_COOKIE,
-  REFRESH_COOKIE,
-} from "./auth";
+import { checkPassword, getSession, ACCESS_COOKIE, REFRESH_COOKIE } from "./auth";
 
 const SECRET = new TextEncoder().encode(
   process.env.SESSION_SECRET ?? "test-session-secret-for-vitest-ok"
@@ -24,9 +19,11 @@ async function makeJwt(sub: string, expiresIn: string, role?: "admin" | "user"):
 
 function mockCookieStore(tokenMap: Record<string, string | undefined>) {
   return {
-    get: vi.fn().mockImplementation((name: string) =>
-      tokenMap[name] !== undefined ? { name, value: tokenMap[name] } : undefined
-    ),
+    get: vi
+      .fn()
+      .mockImplementation((name: string) =>
+        tokenMap[name] !== undefined ? { name, value: tokenMap[name] } : undefined
+      ),
     set: vi.fn(),
     delete: vi.fn(),
   };
@@ -106,7 +103,9 @@ describe("getSession", () => {
   it("アクセストークンがなくてもリフレッシュトークンが有効なら role を返す", async () => {
     const validRefresh = await makeJwt(REFRESH_COOKIE, "30d", "user");
     vi.mocked(cookies).mockResolvedValue(
-      mockCookieStore({ [REFRESH_COOKIE]: validRefresh }) as unknown as Awaited<ReturnType<typeof cookies>>
+      mockCookieStore({ [REFRESH_COOKIE]: validRefresh }) as unknown as Awaited<
+        ReturnType<typeof cookies>
+      >
     );
     expect(await getSession()).toBe("user");
   });
@@ -133,7 +132,9 @@ describe("getSession", () => {
   it("subject が不正なアクセストークンは null を返す", async () => {
     const wrongSubToken = await makeJwt("wrong-subject", "15m", "admin");
     vi.mocked(cookies).mockResolvedValue(
-      mockCookieStore({ [ACCESS_COOKIE]: wrongSubToken }) as unknown as Awaited<ReturnType<typeof cookies>>
+      mockCookieStore({ [ACCESS_COOKIE]: wrongSubToken }) as unknown as Awaited<
+        ReturnType<typeof cookies>
+      >
     );
     expect(await getSession()).toBeNull();
   });

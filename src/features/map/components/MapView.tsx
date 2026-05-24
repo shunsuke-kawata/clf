@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, Marker, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Locker } from "@/features/locker/schemas/locker";
@@ -9,6 +9,7 @@ import { logger } from "@/lib/logger";
 import { APP_CONFIG } from "@/lib/config";
 import { Navigation } from "lucide-react";
 import { LockerIcon } from "@/components/icons/LockerIcon";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { LockerMarker } from "./LockerMarker";
 import { LockerBottomSheet } from "./LockerBottomSheet";
 import { NearbySheet } from "./NearbySheet";
@@ -24,7 +25,7 @@ function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-function CurrentLocationButton() {
+function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocation | null }) {
   const map = useMap();
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +36,19 @@ function CurrentLocationButton() {
     L.DomEvent.disableScrollPropagation(containerRef.current);
   }, []);
 
+  function flyToIfNeeded(lat: number, lng: number) {
+    const targetZoom = APP_CONFIG.map.currentLocationZoom;
+    const dist = map.distance(map.getCenter(), [lat, lng]);
+    if (dist < APP_CONFIG.map.currentLocationSkipDistanceMeters && map.getZoom() >= targetZoom)
+      return;
+    map.flyTo([lat, lng], targetZoom, { duration: 1.5 });
+  }
+
   async function handleClick() {
+    if (currentPosition) {
+      flyToIfNeeded(currentPosition.lat, currentPosition.lng);
+      return;
+    }
     if (!navigator.geolocation) {
       logger.warn("[CurrentLocationButton] geolocation not supported");
       return;
@@ -43,9 +56,11 @@ function CurrentLocationButton() {
     setLoading(true);
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: APP_CONFIG.map.geolocationTimeout,
+        })
       );
-      map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { duration: 1.5 });
+      flyToIfNeeded(pos.coords.latitude, pos.coords.longitude);
     } catch (e) {
       logger.warn("[CurrentLocationButton] geolocation failed", e);
     } finally {
@@ -54,30 +69,69 @@ function CurrentLocationButton() {
   }
 
   return (
-    <div ref={containerRef} className="absolute bottom-44 right-4 z-[1000]">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={loading}
-        aria-label="現在地に戻る"
-        className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 disabled:opacity-50 active:scale-95 transition-transform"
-      >
-        {loading ? (
-          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        ) : (
-          <Navigation className="w-6 h-6" />
-        )}
-      </button>
+    <div ref={containerRef} className="absolute right-4 bottom-44 z-[1000]">
+      <Tooltip tooltipKey="currentLocation">
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={loading}
+          aria-label="現在地に戻る"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-blue-500 shadow-lg transition-transform active:scale-95 disabled:opacity-50"
+        >
+          {loading ? (
+            <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <Navigation className="h-6 w-6" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 }
 
 type UserLocation = { lat: number; lng: number };
 
-function NearbyButton({ onOpen }: { onOpen: (loc: UserLocation) => void }) {
+function UserLocationMarker({ lat, lng }: UserLocation) {
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        className: "",
+        html: `<svg width="24" height="38" viewBox="0 0 24 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="ug" cx="38%" cy="32%" r="65%">
+              <stop offset="0%" stop-color="#B8E8FF"/>
+              <stop offset="100%" stop-color="#3AAAD8"/>
+            </radialGradient>
+          </defs>
+          <rect x="10" y="20" width="4" height="18" rx="2" fill="#3AAAD8"/>
+          <circle cx="12" cy="12" r="11" fill="url(#ug)"/>
+        </svg>`,
+        iconSize: [24, 38],
+        iconAnchor: [12, 38],
+      }),
+    []
+  );
+
+  return <Marker position={[lat, lng]} icon={icon} interactive={false} zIndexOffset={-100} />;
+}
+
+function NearbyButton({
+  onOpen,
+  currentPosition,
+}: {
+  onOpen: (loc: UserLocation) => void;
+  currentPosition: UserLocation | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -88,6 +142,10 @@ function NearbyButton({ onOpen }: { onOpen: (loc: UserLocation) => void }) {
   }, []);
 
   async function handleClick() {
+    if (currentPosition) {
+      onOpen(currentPosition);
+      return;
+    }
     if (!navigator.geolocation) {
       logger.warn("[NearbyButton] geolocation not supported");
       return;
@@ -108,23 +166,32 @@ function NearbyButton({ onOpen }: { onOpen: (loc: UserLocation) => void }) {
   }
 
   return (
-    <div ref={containerRef} className="absolute bottom-24 right-4 z-[1000]">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={loading}
-        aria-label="近くのロッカーを探す"
-        className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-primary disabled:opacity-50 active:scale-95 transition-transform"
-      >
-        {loading ? (
-          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        ) : (
-          <LockerIcon className="w-6 h-6 text-primary" />
-        )}
-      </button>
+    <div ref={containerRef} className="absolute right-4 bottom-24 z-[1000]">
+      <Tooltip tooltipKey="nearbyLockers">
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={loading}
+          aria-label="近くのロッカーを探す"
+          className="text-primary flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95 disabled:opacity-50"
+        >
+          {loading ? (
+            <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <LockerIcon className="text-primary h-6 w-6" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -161,38 +228,52 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [flyToLocker, setFlyToLocker] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentPosition, setCurrentPosition] = useState<UserLocation | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setCurrentPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => logger.warn("[MapView] watchPosition failed", err),
+      { timeout: APP_CONFIG.map.geolocationTimeout }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   return (
     <>
       <MapContainer
         center={[APP_CONFIG.map.defaultCenter.lat, APP_CONFIG.map.defaultCenter.lng]}
         zoom={13}
+        maxZoom={APP_CONFIG.map.maxZoom}
         className="h-dvh w-full"
         zoomControl={false}
       >
         <TileLayer
           attribution={APP_CONFIG.map.tileAttribution}
           url={APP_CONFIG.map.tileUrl}
+          maxNativeZoom={APP_CONFIG.map.maxNativeZoom}
+          maxZoom={APP_CONFIG.map.maxZoom}
         />
         <MapResizeHandler />
         <ZoomControl position="bottomleft" />
-        <CurrentLocationButton />
+        <CurrentLocationButton currentPosition={currentPosition} />
         <NearbyButton
+          currentPosition={currentPosition}
           onOpen={(loc) => {
             setUserLocation(loc);
             setNearbyOpen(true);
           }}
         />
+        {currentPosition && (
+          <UserLocationMarker lat={currentPosition.lat} lng={currentPosition.lng} />
+        )}
         <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
         {flyToLocker && <FlyToHandler lat={flyToLocker.lat} lng={flyToLocker.lng} />}
         {lockers.map((locker) => (
-          <LockerMarker
-            key={locker.id}
-            locker={locker}
-            onSelect={setSelectedLockerId}
-          />
+          <LockerMarker key={locker.id} locker={locker} onSelect={setSelectedLockerId} />
         ))}
         {searchPin && <SearchResultMarker {...searchPin} />}
       </MapContainer>
@@ -205,7 +286,7 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         open={nearbyOpen}
         onClose={() => setNearbyOpen(false)}
         lockers={lockers}
-        userLocation={userLocation}
+        userLocation={currentPosition ?? userLocation}
         onSelectLocker={(locker) => {
           setNearbyOpen(false);
           setSelectedLockerId(locker.id);

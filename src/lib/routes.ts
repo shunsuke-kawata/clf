@@ -29,6 +29,7 @@ export const PAGE_ROUTES = {
   adminLogin: "/login/admin",
   admin: "/admin",
   newLocker: "/new",
+  help: "/help",
   lockerDetail: (id: string) => `/lockers/${id}`,
   lockerEdit: (id: string) => `/lockers/${id}/edit`,
 } as const;

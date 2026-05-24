@@ -14,9 +14,15 @@ export function PricingEditor() {
 
   function togglePrice(price: number) {
     if (pricing.includes(price)) {
-      setValue("pricing", pricing.filter((p) => p !== price));
+      setValue(
+        "pricing",
+        pricing.filter((p) => p !== price)
+      );
     } else {
-      setValue("pricing", [...pricing, price].sort((a, b) => a - b));
+      setValue(
+        "pricing",
+        [...pricing, price].sort((a, b) => a - b)
+      );
     }
   }
 
@@ -25,20 +31,20 @@ export function PricingEditor() {
       <label className="text-sm font-medium">料金</label>
 
       {pricing.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex [scrollbar-width:none] gap-1.5 overflow-x-auto pb-0.5 [&::-webkit-scrollbar]:hidden">
           {pricing.map((price) => (
             <span
               key={price}
-              className="flex-shrink-0 flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium"
+              className="bg-primary text-primary-foreground flex flex-shrink-0 items-center gap-1 rounded-full py-1 pr-1.5 pl-2.5 text-xs font-medium"
             >
               ¥{price.toLocaleString()}
               <button
                 type="button"
                 onClick={() => togglePrice(price)}
-                className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/20"
+                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-white/20"
                 aria-label={`¥${price.toLocaleString()}を削除`}
               >
-                <X className="w-3 h-3" />
+                <X className="h-3 w-3" />
               </button>
             </span>
           ))}
@@ -48,7 +54,7 @@ export function PricingEditor() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg border border-input bg-background text-sm text-left min-h-[44px]"
+        className="border-input bg-background flex min-h-[44px] w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm"
       >
         <span className={pricing.length > 0 ? "text-foreground" : "text-muted-foreground"}>
           {pricing.length > 0 ? `${pricing.length}件選択中` : "料金を選択"}
@@ -57,21 +63,18 @@ export function PricingEditor() {
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-[1001] flex items-end"
-          onClick={() => setOpen(false)}
-        >
+        <div className="fixed inset-0 z-[1001] flex items-end" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative w-full bg-background rounded-t-2xl shadow-xl overflow-hidden"
+            className="bg-background relative w-full overflow-hidden rounded-t-2xl shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h2 className="font-semibold text-base">料金を選択</h2>
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <h2 className="text-base font-semibold">料金を選択</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-sm font-medium text-primary min-h-[44px] min-w-[44px] flex items-center justify-end"
+                className="text-primary flex min-h-[44px] min-w-[44px] items-center justify-end text-sm font-medium"
               >
                 完了
               </button>
@@ -80,15 +83,15 @@ export function PricingEditor() {
               {PRICE_OPTIONS.map((price, i) => (
                 <label
                   key={price}
-                  className={`flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-accent active:bg-accent ${
-                    i < PRICE_OPTIONS.length - 1 ? "border-b border-border" : ""
+                  className={`hover:bg-accent active:bg-accent flex cursor-pointer items-center gap-3 px-5 py-3.5 ${
+                    i < PRICE_OPTIONS.length - 1 ? "border-border border-b" : ""
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={pricing.includes(price)}
                     onChange={() => togglePrice(price)}
-                    className="w-4 h-4"
+                    className="h-4 w-4"
                   />
                   <span className="text-sm">¥{price.toLocaleString()}</span>
                 </label>

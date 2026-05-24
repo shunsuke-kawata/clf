@@ -10,9 +10,7 @@ export async function loginAction(
   formData: FormData
 ): Promise<{ error: string }> {
   const password =
-    typeof formData.get("password") === "string"
-      ? (formData.get("password") as string)
-      : "";
+    typeof formData.get("password") === "string" ? (formData.get("password") as string) : "";
   const role = checkPassword(password);
   if (!role || role !== variant) {
     return { error: "パスワードが違います" };

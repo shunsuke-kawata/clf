@@ -19,7 +19,9 @@ type Props = {
 
 function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      timeout: APP_CONFIG.map.geolocationTimeout,
+    })
   );
 }
 
@@ -113,14 +115,11 @@ export function VenueSearchBar({ onResult }: Props) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="absolute top-3 left-4 right-4 z-[1000]"
-    >
+    <div ref={containerRef} className="absolute top-3 right-4 left-4 z-[1000]">
       <form onSubmit={handleSearch}>
-        <div className="flex items-center bg-white rounded-full shadow-lg h-[52px] px-4 gap-2">
+        <div className="flex h-[52px] items-center gap-2 rounded-full bg-white px-4 shadow-lg">
           <svg
-            className="w-5 h-5 text-gray-400 shrink-0"
+            className="h-5 w-5 shrink-0 text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -141,15 +140,15 @@ export function VenueSearchBar({ onResult }: Props) {
             }}
             onFocus={() => suggestions.length > 0 && setOpen(true)}
             placeholder="会場名・駅名で検索"
-            className="flex-1 bg-transparent text-base outline-none text-gray-800 placeholder:text-gray-400 min-w-0"
+            className="min-w-0 flex-1 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
             autoComplete="off"
           />
           {loading ? (
-            <span className="text-gray-400 text-xs shrink-0">…</span>
+            <span className="shrink-0 text-xs text-gray-400">…</span>
           ) : (
             <button
               type="submit"
-              className="text-blue-500 text-sm font-medium shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center text-sm font-medium text-blue-500"
             >
               検索
             </button>
@@ -158,16 +157,16 @@ export function VenueSearchBar({ onResult }: Props) {
       </form>
 
       {open && suggestions.length > 0 && (
-        <ul className="mt-2 rounded-2xl bg-white shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+        <ul className="mt-2 max-h-60 overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-lg">
           {suggestions.map((s, i) => (
             <li key={i}>
               <button
                 type="button"
-                className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-3"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
                 onClick={() => commit(s)}
               >
                 <svg
-                  className="w-4 h-4 text-gray-400 shrink-0"
+                  className="h-4 w-4 shrink-0 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -193,9 +192,7 @@ export function VenueSearchBar({ onResult }: Props) {
       )}
 
       {error && (
-        <p className="mt-1 text-xs text-red-500 bg-white px-4 py-2 rounded-xl shadow">
-          {error}
-        </p>
+        <p className="mt-1 rounded-xl bg-white px-4 py-2 text-xs text-red-500 shadow">{error}</p>
       )}
     </div>
   );

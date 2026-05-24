@@ -85,12 +85,8 @@ async function fetchWithRetry(prefecture: string): Promise<LockerRow[]> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       if (attempt > 0) {
-        const waitMs = isRateLimitError(lastError)
-          ? RATE_LIMIT_DELAY_MS
-          : DELAY_MS * attempt;
-        console.log(
-          `  リトライ ${attempt}/${MAX_RETRIES} (${waitMs / 1000}秒待機)...`,
-        );
+        const waitMs = isRateLimitError(lastError) ? RATE_LIMIT_DELAY_MS : DELAY_MS * attempt;
+        console.log(`  リトライ ${attempt}/${MAX_RETRIES} (${waitMs / 1000}秒待機)...`);
         await sleep(waitMs);
       }
       return await fetchFromOverpass(prefecture);
@@ -111,7 +107,7 @@ async function main(): Promise<void> {
   const failed: string[] = [];
 
   console.log(
-    `全${total}都道府県の処理を開始します（推定時間: ${Math.ceil((total * DELAY_MS) / 60000)}〜${Math.ceil((total * (DELAY_MS + 10000)) / 60000)} 分）`,
+    `全${total}都道府県の処理を開始します（推定時間: ${Math.ceil((total * DELAY_MS) / 60000)}〜${Math.ceil((total * (DELAY_MS + 10000)) / 60000)} 分）`
   );
   console.log("");
 
@@ -127,10 +123,7 @@ async function main(): Promise<void> {
       process.stdout.write(` ${rows.length} 件 (累計: ${allRows.length} 件)\n`);
     } catch (err) {
       process.stdout.write(` スキップ\n`);
-      console.error(
-        `  ${prefecture} の取得に失敗:`,
-        err instanceof Error ? err.message : err,
-      );
+      console.error(`  ${prefecture} の取得に失敗:`, err instanceof Error ? err.message : err);
       failed.push(prefecture);
     }
 

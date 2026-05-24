@@ -15,8 +15,8 @@ export function LoginForm({ variant = "user" }: Props) {
   const isAdmin = variant === "admin";
 
   return (
-    <form action={action} className="w-full max-w-sm flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-center">
+    <form action={action} className="flex w-full max-w-sm flex-col gap-4">
+      <h1 className="text-center text-xl font-semibold">
         {isAdmin ? "管理者ログイン" : "ログイン"}
       </h1>
 
@@ -25,25 +25,29 @@ export function LoginForm({ variant = "user" }: Props) {
         name="password"
         placeholder={isAdmin ? "管理者パスワード" : "パスワード"}
         autoComplete="current-password"
-        className="w-full rounded-md border border-input bg-background px-4 py-3 text-base outline-none focus:ring-2 focus:ring-ring min-h-[44px]"
+        className="border-input bg-background focus:ring-ring min-h-[44px] w-full rounded-md border px-4 py-3 text-base outline-none focus:ring-2"
         required
       />
 
-      {state?.error && (
-        <p className="text-sm text-destructive text-center">{state.error}</p>
-      )}
+      {state?.error && <p className="text-destructive text-center text-sm">{state.error}</p>}
 
       <Button type="submit" disabled={pending} className="min-h-[44px]">
         {pending ? "確認中..." : "ログイン"}
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-center text-sm">
         {isAdmin ? (
-          <Link href={PAGE_ROUTES.login} className="underline underline-offset-4 hover:text-foreground">
+          <Link
+            href={PAGE_ROUTES.login}
+            className="hover:text-foreground underline underline-offset-4"
+          >
             ← 通常ログインに戻る
           </Link>
         ) : (
-          <Link href={PAGE_ROUTES.adminLogin} className="underline underline-offset-4 hover:text-foreground">
+          <Link
+            href={PAGE_ROUTES.adminLogin}
+            className="hover:text-foreground underline underline-offset-4"
+          >
             管理者の方はこちら →
           </Link>
         )}
