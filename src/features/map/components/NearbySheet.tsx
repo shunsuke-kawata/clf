@@ -83,7 +83,7 @@ export function NearbySheet({
                 locker.lat,
                 locker.lng
               );
-              const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${locker.lat},${locker.lng}`;
+              const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${locker.lat},${locker.lng}`;
 
               return (
                 <li key={locker.id} className="flex items-center gap-3 py-3">
