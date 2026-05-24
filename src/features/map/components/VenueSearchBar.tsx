@@ -17,6 +17,9 @@ type SearchResult = {
 type HistoryItem = {
   id: string;
   query: string;
+  lat: number | null;
+  lng: number | null;
+  display_name: string | null;
   searched_at: string;
 };
 
@@ -99,28 +102,24 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     fetch(API_ROUTES.searchHistory.upsert, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: shortName }),
+      body: JSON.stringify({ query: shortName, lat, lng, display_name: result.display_name }),
     }).catch((e) => logger.error("[VenueSearchBar] history upsert failed", e));
   }
 
-  async function commitFromHistory(item: HistoryItem) {
+  function commitFromHistory(item: HistoryItem) {
     setHistoryOpen(false);
-    setLoading(true);
     setError("");
-    const res = await fetch(API_ROUTES.geocode.search(item.query));
-    setLoading(false);
-    if (!res.ok) {
-      logger.error("[VenueSearchBar] history search failed", { status: res.status });
-      setError("検索に失敗しました");
-      return;
+    if (item.lat !== null && item.lng !== null) {
+      const displayName = item.display_name ?? item.query;
+      map.flyTo([item.lat, item.lng], 16, { duration: 1.5 });
+      onResult(item.lat, item.lng, displayName);
+      setQuery(item.query);
+      setIsCommitted(true);
+      setSuggestions([]);
+      setOpen(false);
+    } else {
+      setError("場所の情報が不足しています");
     }
-    const results: SearchResult[] = await res.json();
-    if (results.length === 0) {
-      setError("場所が見つかりませんでした");
-      return;
-    }
-    setQuery(item.query);
-    commit(results[0]);
   }
 
   async function deleteHistory(id: string) {
@@ -250,7 +249,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
       </form>
 
       {open && suggestions.length > 0 && (
-        <ul className="mt-2 max-h-60 overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-lg">
+        <ul className="z-[1001] mt-2 max-h-60 overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-lg">
           {suggestions.map((s, i) => (
             <li key={i}>
               <button
@@ -285,7 +284,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
       )}
 
       {showHistory && (
-        <ul className="mt-2 max-h-60 overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-lg">
+        <ul className="mt-2 mr-16 max-h-60 overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-lg">
           {history.map((h) => (
             <li key={h.id} className="flex items-center">
               <button

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   logger.debug("[search-history] list: querying DB", { sessionId });
   const { data, error } = await supabaseAdmin
     .from("search_history")
-    .select("id, query, searched_at")
+    .select("id, query, lat, lng, display_name, searched_at")
     .eq("session_id", sessionId)
     .order("searched_at", { ascending: false })
     .limit(APP_CONFIG.searchHistory.limit);
@@ -39,6 +39,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const query = typeof body?.query === "string" ? body.query.trim() : "";
+  const lat = typeof body?.lat === "number" ? body.lat : null;
+  const lng = typeof body?.lng === "number" ? body.lng : null;
+  const display_name = typeof body?.display_name === "string" ? body.display_name.trim() : null;
   if (!query) {
     logger.warn("[search-history] upsert: missing query");
     return NextResponse.json({ error: "query is required" }, { status: 400 });
@@ -58,10 +61,10 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("search_history")
     .upsert(
-      { session_id: sessionId, query, searched_at: new Date().toISOString() },
+      { session_id: sessionId, query, lat, lng, display_name, searched_at: new Date().toISOString() },
       { onConflict: "session_id,query" }
     )
-    .select("id, query, searched_at")
+    .select("id, query, lat, lng, display_name, searched_at")
     .single();
 
   if (error) {
