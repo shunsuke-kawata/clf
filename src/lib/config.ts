@@ -17,6 +17,7 @@ export const APP_CONFIG = {
     pickerZoom: 21,
     pickerFlyZoom: 19,
     geolocationTimeout: 10_000,
+    nearbyRadiusMeters: 3_000,
     tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     leafletIcons: {

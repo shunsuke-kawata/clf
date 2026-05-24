@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { LockerIcon } from "@/components/icons/LockerIcon";
 import type { Locker } from "@/features/locker/schemas/locker";
 import { haversineDistance, formatDistance } from "@/lib/utils/distance";
+import { APP_CONFIG } from "@/lib/config";
 
 type UserLocation = { lat: number; lng: number };
 
@@ -13,6 +14,7 @@ type Props = {
   onClose: () => void;
   lockers: Locker[];
   userLocation: UserLocation | null;
+  originName?: string;
   onSelectLocker: (locker: Locker) => void;
 };
 
@@ -24,13 +26,26 @@ function lockerLabel(locker: Locker): string {
   return "コインロッカー";
 }
 
-export function NearbySheet({ open, onClose, lockers, userLocation, onSelectLocker }: Props) {
+export function NearbySheet({
+  open,
+  onClose,
+  lockers,
+  userLocation,
+  originName,
+  onSelectLocker,
+}: Props) {
   const sorted = userLocation
-    ? [...lockers].sort((a, b) => {
-        const da = haversineDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
-        const db = haversineDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
-        return da - db;
-      })
+    ? [...lockers]
+        .filter(
+          (l) =>
+            haversineDistance(userLocation.lat, userLocation.lng, l.lat, l.lng) <=
+            APP_CONFIG.map.nearbyRadiusMeters
+        )
+        .sort((a, b) => {
+          const da = haversineDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
+          const db = haversineDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
+          return da - db;
+        })
     : lockers;
 
   return (
@@ -46,7 +61,7 @@ export function NearbySheet({ open, onClose, lockers, userLocation, onSelectLock
         className="z-[2000] max-h-[75dvh] overflow-y-auto overscroll-contain rounded-t-2xl pb-8"
       >
         <SheetHeader>
-          <SheetTitle>近くのロッカー</SheetTitle>
+          <SheetTitle>{originName ? `${originName} 付近のロッカー` : "近くのロッカー"}</SheetTitle>
         </SheetHeader>
 
         {!userLocation && (
@@ -55,7 +70,7 @@ export function NearbySheet({ open, onClose, lockers, userLocation, onSelectLock
 
         {userLocation && sorted.length === 0 && (
           <p className="text-muted-foreground py-8 text-center text-sm">
-            登録されたロッカーがありません
+            3km圏内にロッカーが見つかりませんでした
           </p>
         )}
 
