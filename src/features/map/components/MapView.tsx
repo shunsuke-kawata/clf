@@ -191,37 +191,6 @@ function MapResizeHandler() {
   return null;
 }
 
-function MapDebugLogger() {
-  const map = useMap();
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function findTileLayer(): (L.TileLayer & Record<string, any>) | undefined {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return Object.values((map as unknown as any)._layers ?? {}).find(
-        (l): l is L.TileLayer => l instanceof L.TileLayer
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ) as (L.TileLayer & Record<string, any>) | undefined;
-    }
-
-    function logTileState(event: string) {
-      const mapZoom = map.getZoom();
-      const tl = findTileLayer();
-      logger.debug(
-        `[MapDebug] ${event} | mapZoom=${mapZoom} | _tileZoom=${tl?._tileZoom}`
-      );
-    }
-
-    map.on("zoomend", () => logTileState("zoomend"));
-    map.on("moveend", () => logTileState("moveend"));
-
-    return () => {
-      map.off("zoomend");
-      map.off("moveend");
-    };
-  }, [map]);
-  return null;
-}
-
 // Leaflet デフォルトアイコン修正（モジュールロード時に即時実行）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -270,7 +239,6 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
           maxZoom={APP_CONFIG.map.maxZoom}
         />
         <MapResizeHandler />
-        <MapDebugLogger />
         <ZoomControl position="bottomleft" />
         <CurrentLocationButton currentPosition={currentPosition} />
         <NearbyButton
