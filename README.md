@@ -301,30 +301,79 @@ Vercel ダッシュボード → Settings → Environment Variables に以下を
 | `APP_PASSWORD`                  | 任意のパスワード（投稿・編集時に使用）                  |
 | `SESSION_SECRET`                | 32文字以上のランダム文字列（`openssl rand -base64 32`） |
 
-### Supabase 本番テーブルの作成
+### Supabase 本番DBへのマイグレーション適用
 
-Supabase ダッシュボードの SQL Editor で以下を実行します。
+#### 初回セットアップ（本番DBにすでにテーブルが存在する場合）
+
+本番DBにすでにテーブルが作成済みの場合、過去のマイグレーションを「適用済み」としてマークしてから push します。
+
+```bash
+# プロジェクトと紐付け（初回のみ）
+# Project ref は Supabase ダッシュボード → Settings → General で確認
+supabase link --project-ref <project-ref>
+
+# 既存のマイグレーションを適用済みとしてマーク（実際のSQLは実行しない）
+supabase migration repair --status applied 20240101000000
+
+# 未適用のマイグレーションのみを適用
+supabase db push
+```
+
+#### 通常のマイグレーション適用（新しいマイグレーションを追加した場合）
+
+```bash
+# 本番DBに未適用のマイグレーションを適用
+supabase db push
+```
+
+適用前に確認ダイアログが表示されるので、内容を確認して `Y` を入力します。
+
+### DBスキーマを変更するときの手順
+
+テーブルの追加・カラムの追加など、DBスキーマを変更する場合は以下の手順で行います。
+
+#### 1. マイグレーションファイルを作成する
+
+`supabase/migrations/` に新しい SQL ファイルを作成します。ファイル名は `YYYYMMDDhhmmss_説明.sql` の形式にします。
+
+```bash
+# 例: search_history テーブルを追加する場合
+touch supabase/migrations/20260525000000_add_search_history.sql
+```
+
+SQL ファイルには変更内容のみを記述します（既存テーブルの再作成は不要）。
 
 ```sql
-CREATE TABLE lockers (
+-- 例: 新しいテーブルを追加
+CREATE TABLE public.search_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  lat DOUBLE PRECISION NOT NULL,
-  lng DOUBLE PRECISION NOT NULL,
-  note TEXT,
-  pricing JSONB NOT NULL DEFAULT '[]',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  session_id TEXT NOT NULL,
+  query TEXT NOT NULL,
+  searched_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE locker_photos (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  locker_id UUID NOT NULL REFERENCES lockers(id) ON DELETE CASCADE,
-  storage_key TEXT NOT NULL,
-  order_index INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- 例: 既存テーブルにカラムを追加
+ALTER TABLE public.search_history
+  ADD COLUMN lat DOUBLE PRECISION;
 ```
+
+#### 2. ローカルDBに適用する
+
+```bash
+supabase db push --local
+```
+
+#### 3. 動作確認後、本番DBに適用する
+
+PRマージ・Vercelデプロイ後に実行します。
+
+```bash
+supabase db push
+```
+
+> **注意**: `supabase db push` はアプリコードのデプロイとは独立しています。マイグレーションを含む PR をマージしてデプロイした後、必ず手動で実行してください。
+
+---
 
 ### Supabase Storage のバケット作成（本番）
 
