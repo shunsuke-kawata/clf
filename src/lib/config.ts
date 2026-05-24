@@ -14,8 +14,8 @@ export const APP_CONFIG = {
     maxZoom: 21,
     currentLocationZoom: 16,
     currentLocationSkipDistanceMeters: 50,
-    pickerZoom: 19,
-    pickerFlyZoom: 16,
+    pickerZoom: 21,
+    pickerFlyZoom: 19,
     geolocationTimeout: 10_000,
     tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileAttribution:
