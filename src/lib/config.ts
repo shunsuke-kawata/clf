@@ -17,6 +17,7 @@ export const APP_CONFIG = {
     pickerZoom: 21,
     pickerFlyZoom: 19,
     geolocationTimeout: 10_000,
+    nearbyRadiusMeters: 3_000,
     tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     leafletIcons: {
@@ -42,5 +43,10 @@ export const APP_CONFIG = {
     url: "https://photon.komoot.io/api/",
     upstreamLimit: 10,
     resultLimit: 5,
+  },
+  searchHistory: {
+    limit: 10,
+    cookieName: "clf_search_session",
+    cookieMaxAge: 60 * 60 * 24 * 365,
   },
 } as const;

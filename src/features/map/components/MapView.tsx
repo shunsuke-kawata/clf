@@ -25,7 +25,13 @@ function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocation | null }) {
+function CurrentLocationButton({
+  currentPosition,
+  onClear,
+}: {
+  currentPosition: UserLocation | null;
+  onClear?: () => void;
+}) {
   const map = useMap();
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -45,6 +51,7 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
   }
 
   async function handleClick() {
+    onClear?.();
     if (currentPosition) {
       flyToIfNeeded(currentPosition.lat, currentPosition.lng);
       return;
@@ -128,9 +135,11 @@ function UserLocationMarker({ lat, lng }: UserLocation) {
 function NearbyButton({
   onOpen,
   currentPosition,
+  searchPin,
 }: {
-  onOpen: (loc: UserLocation) => void;
+  onOpen: (loc: UserLocation, originName?: string) => void;
   currentPosition: UserLocation | null;
+  searchPin: SearchPin | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -142,6 +151,11 @@ function NearbyButton({
   }, []);
 
   async function handleClick() {
+    // 施設検索済みの場合は検索地点を基準にする
+    if (searchPin) {
+      onOpen({ lat: searchPin.lat, lng: searchPin.lng }, searchPin.name);
+      return;
+    }
     if (currentPosition) {
       onOpen(currentPosition);
       return;
@@ -226,6 +240,7 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
   const [selectedLockerId, setSelectedLockerId] = useState<string | null>(null);
   const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [nearbyOriginName, setNearbyOriginName] = useState<string | undefined>(undefined);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [flyToLocker, setFlyToLocker] = useState<{ lat: number; lng: number } | null>(null);
   const [currentPosition, setCurrentPosition] = useState<UserLocation | null>(null);
@@ -257,18 +272,26 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         />
         <MapResizeHandler />
         <ZoomControl position="bottomleft" />
-        <CurrentLocationButton currentPosition={currentPosition} />
+        <CurrentLocationButton
+          currentPosition={currentPosition}
+          onClear={() => setSearchPin(null)}
+        />
         <NearbyButton
           currentPosition={currentPosition}
-          onOpen={(loc) => {
+          searchPin={searchPin}
+          onOpen={(loc, originName) => {
             setUserLocation(loc);
+            setNearbyOriginName(originName);
             setNearbyOpen(true);
           }}
         />
         {currentPosition && (
           <UserLocationMarker lat={currentPosition.lat} lng={currentPosition.lng} />
         )}
-        <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
+        <VenueSearchBar
+          onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })}
+          onClear={() => setSearchPin(null)}
+        />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
         {flyToLocker && <FlyToHandler lat={flyToLocker.lat} lng={flyToLocker.lng} />}
@@ -286,7 +309,8 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         open={nearbyOpen}
         onClose={() => setNearbyOpen(false)}
         lockers={lockers}
-        userLocation={currentPosition ?? userLocation}
+        userLocation={nearbyOriginName ? userLocation : (currentPosition ?? userLocation)}
+        originName={nearbyOriginName}
         onSelectLocker={(locker) => {
           setNearbyOpen(false);
           setSelectedLockerId(locker.id);

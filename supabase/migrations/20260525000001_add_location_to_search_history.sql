@@ -1,0 +1,4 @@
+ALTER TABLE public.search_history
+  ADD COLUMN lat DOUBLE PRECISION,
+  ADD COLUMN lng DOUBLE PRECISION,
+  ADD COLUMN display_name TEXT;
