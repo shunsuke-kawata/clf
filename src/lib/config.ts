@@ -44,4 +44,9 @@ export const APP_CONFIG = {
     upstreamLimit: 10,
     resultLimit: 5,
   },
+  searchHistory: {
+    limit: 10,
+    cookieName: "clf_search_session",
+    cookieMaxAge: 60 * 60 * 24 * 365,
+  },
 } as const;

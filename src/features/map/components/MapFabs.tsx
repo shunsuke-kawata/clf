@@ -14,10 +14,10 @@ type Props = {
 export function MapFabs({ role }: Props) {
   return (
     <>
-      <Tooltip tooltipKey="help" side="right">
+      <Tooltip tooltipKey="help" side="left">
         <Link
           href={PAGE_ROUTES.help}
-          className="bg-secondary text-secondary-foreground absolute top-[68px] left-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md"
+          className="bg-secondary text-secondary-foreground absolute top-[68px] right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md"
           aria-label="使い方"
         >
           <HelpCircle className="h-5 w-5" />
@@ -52,7 +52,7 @@ export function MapFabs({ role }: Props) {
         <Tooltip tooltipKey="admin" side="left">
           <Link
             href={PAGE_ROUTES.admin}
-            className="bg-secondary text-secondary-foreground absolute top-[68px] right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md"
+            className="bg-secondary text-secondary-foreground absolute top-[132px] right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md"
             aria-label="管理画面"
           >
             <Settings className="h-5 w-5" />
@@ -62,7 +62,7 @@ export function MapFabs({ role }: Props) {
 
       {role && (
         <LogoutButton
-          className={`absolute ${role === "admin" ? "top-[132px]" : "top-[68px]"} bg-secondary text-secondary-foreground right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md`}
+          className={`absolute ${role === "admin" ? "top-[196px]" : "top-[132px]"} bg-secondary text-secondary-foreground right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md`}
         />
       )}
     </>

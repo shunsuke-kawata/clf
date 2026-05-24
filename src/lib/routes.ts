@@ -13,6 +13,11 @@ export const API_ROUTES = {
   geocode: {
     search: (q: string) => `/api/geocode?q=${encodeURIComponent(q)}`,
   },
+  searchHistory: {
+    list: "/api/search-history",
+    upsert: "/api/search-history",
+    delete: (id: string) => `/api/search-history/${id}`,
+  },
   auth: {
     login: "/api/auth/login",
     logout: "/api/auth/logout",
