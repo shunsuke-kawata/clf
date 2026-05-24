@@ -11,6 +11,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@base-ui/react": "^1.5.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",

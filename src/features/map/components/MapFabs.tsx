@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Settings, LogIn } from "lucide-react";
+import { Plus, Settings, LogIn, HelpCircle } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { LogoutButton } from "@/features/auth/components/LogoutButton";
 import { PAGE_ROUTES } from "@/lib/routes";
@@ -14,6 +14,16 @@ type Props = {
 export function MapFabs({ role }: Props) {
   return (
     <>
+      <Tooltip tooltipKey="help" side="right">
+        <Link
+          href={PAGE_ROUTES.help}
+          className="absolute top-[68px] left-4 z-[1000] flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-md border"
+          aria-label="使い方"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </Link>
+      </Tooltip>
+
       {!role && (
         <Tooltip tooltipKey="login" side="left">
           <Link

@@ -4,5 +4,6 @@
   "newLocker": "ロッカーを追加する",
   "login": "ログイン",
   "admin": "管理画面",
-  "logout": "ログアウト"
+  "logout": "ログアウト",
+  "help": "使い方"
 }
