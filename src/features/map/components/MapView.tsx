@@ -36,9 +36,16 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
     L.DomEvent.disableScrollPropagation(containerRef.current);
   }, []);
 
+  function flyToIfNeeded(lat: number, lng: number) {
+    const targetZoom = APP_CONFIG.map.currentLocationZoom;
+    const dist = map.distance(map.getCenter(), [lat, lng]);
+    if (dist < APP_CONFIG.map.currentLocationSkipDistanceMeters && map.getZoom() >= targetZoom) return;
+    map.flyTo([lat, lng], targetZoom, { duration: 1.5 });
+  }
+
   async function handleClick() {
     if (currentPosition) {
-      map.flyTo([currentPosition.lat, currentPosition.lng], 16, { duration: 1.5 });
+      flyToIfNeeded(currentPosition.lat, currentPosition.lng);
       return;
     }
     if (!navigator.geolocation) {
@@ -50,7 +57,7 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
       );
-      map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { duration: 1.5 });
+      flyToIfNeeded(pos.coords.latitude, pos.coords.longitude);
     } catch (e) {
       logger.warn("[CurrentLocationButton] geolocation failed", e);
     } finally {
