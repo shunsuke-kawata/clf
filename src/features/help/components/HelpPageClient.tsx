@@ -17,10 +17,10 @@ export function HelpPageClient() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="目次を開く"
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center justify-center gap-1 py-3 px-1.5 bg-background border-l border-y rounded-l-xl shadow-md"
+        className="bg-background fixed top-1/2 right-0 z-50 flex -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-xl border-y border-l px-1.5 py-3 shadow-md"
       >
-        <List className="w-4 h-4 text-muted-foreground" />
-        <span className="text-[10px] text-muted-foreground [writing-mode:vertical-rl]">目次</span>
+        <List className="text-muted-foreground h-4 w-4" />
+        <span className="text-muted-foreground text-[10px] [writing-mode:vertical-rl]">目次</span>
       </button>
 
       {/* 目次 Sheet（左から） */}
@@ -34,7 +34,7 @@ export function HelpPageClient() {
       </Sheet>
 
       {/* コンテンツ */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-2xl px-4 py-6">
         <HelpContent onSectionChange={setActiveId} />
       </div>
     </>

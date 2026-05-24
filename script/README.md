@@ -13,9 +13,9 @@ pnpm install
 
 `import_to_db.ts` を使う際は以下の環境変数が必要。
 
-| 変数名 | 内容 |
-|--------|------|
-| `SUPABASE_URL` | SupabaseプロジェクトURL |
+| 変数名                      | 内容                                             |
+| --------------------------- | ------------------------------------------------ |
+| `SUPABASE_URL`              | SupabaseプロジェクトURL                          |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role キー（`SUPABASE_SERVICE_ROLE_KEY`） |
 
 `.env` ファイルを作るか、実行時に `export` で設定する。
@@ -33,10 +33,10 @@ export SUPABASE_SERVICE_ROLE_KEY=eyJ...
 pnpm fetch [エリア名] [出力ファイル]
 ```
 
-| 引数 | デフォルト | 説明 |
-|------|-----------|------|
-| エリア名 | `東京都` | OSM の `name` タグに一致する地名 |
-| 出力ファイル | `lockers.csv` | 出力先CSVファイルパス |
+| 引数         | デフォルト    | 説明                             |
+| ------------ | ------------- | -------------------------------- |
+| エリア名     | `東京都`      | OSM の `name` タグに一致する地名 |
+| 出力ファイル | `lockers.csv` | 出力先CSVファイルパス            |
 
 ```bash
 pnpm fetch                          # 東京都 → lockers.csv
@@ -94,10 +94,10 @@ name,lat,lng,note,pricing
 "新宿駅東口コインロッカー",35.69072,139.70011,"運営: JR東日本","[]"
 ```
 
-| カラム | 型 | 説明 |
-|--------|----|------|
-| `name` | string | ロッカー名（OSM の `name` タグ） |
-| `lat` | number | 緯度 |
-| `lng` | number | 経度 |
-| `note` | string | 運営・営業時間・料金など |
+| カラム    | 型             | 説明                                  |
+| --------- | -------------- | ------------------------------------- |
+| `name`    | string         | ロッカー名（OSM の `name` タグ）      |
+| `lat`     | number         | 緯度                                  |
+| `lng`     | number         | 経度                                  |
+| `note`    | string         | 運営・営業時間・料金など              |
 | `pricing` | JSON配列文字列 | 料金情報（初期値 `[]`、手動で編集可） |

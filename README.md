@@ -13,17 +13,17 @@
 
 ## 技術スタック
 
-| 用途 | 技術 |
-|------|------|
-| フレームワーク | Next.js 16 (App Router) |
-| 言語 | TypeScript |
-| スタイル | Tailwind CSS v4 + shadcn/ui |
-| 地図 | Leaflet + react-leaflet |
-| DB / Storage | Supabase (PostgreSQL + Storage) |
-| バリデーション | Zod + react-hook-form |
-| 会場検索 | Nominatim (OpenStreetMap) |
-| デプロイ | Vercel |
-| パッケージ管理 | pnpm |
+| 用途           | 技術                            |
+| -------------- | ------------------------------- |
+| フレームワーク | Next.js 16 (App Router)         |
+| 言語           | TypeScript                      |
+| スタイル       | Tailwind CSS v4 + shadcn/ui     |
+| 地図           | Leaflet + react-leaflet         |
+| DB / Storage   | Supabase (PostgreSQL + Storage) |
+| バリデーション | Zod + react-hook-form           |
+| 会場検索       | Nominatim (OpenStreetMap)       |
+| デプロイ       | Vercel                          |
+| パッケージ管理 | pnpm                            |
 
 ---
 
@@ -158,10 +158,10 @@ openssl rand -base64 32
 ローカルの Supabase ダッシュボード（[http://127.0.0.1:54323](http://127.0.0.1:54323)）を開き、  
 **Storage → New bucket** で以下を作成します。
 
-| 項目 | 値 |
-|------|----|
+| 項目       | 値              |
+| ---------- | --------------- |
 | バケット名 | `locker-photos` |
-| Public | オン |
+| Public     | オン            |
 
 > DBスキーマ（テーブル作成）はマイグレーションファイルから自動適用されるため、手動実行不要です。
 
@@ -195,13 +195,13 @@ Cloudflare tunnel 起動中.....
 
 ## make コマンド一覧
 
-| コマンド | 説明 |
-|----------|------|
-| `make dev` | 開発環境をフルで起動（Supabase + Cloudflare tunnel + Next.js） |
-| `make stop` | すべてのサービスを停止（Supabase + Cloudflare tunnel + Next.js） |
-| `make db-start` | Supabase のみ起動 |
-| `make db-stop` | Supabase のみ停止 |
-| `make db-status` | Supabase の起動状態を確認 |
+| コマンド         | 説明                                                             |
+| ---------------- | ---------------------------------------------------------------- |
+| `make dev`       | 開発環境をフルで起動（Supabase + Cloudflare tunnel + Next.js）   |
+| `make stop`      | すべてのサービスを停止（Supabase + Cloudflare tunnel + Next.js） |
+| `make db-start`  | Supabase のみ起動                                                |
+| `make db-stop`   | Supabase のみ停止                                                |
+| `make db-status` | Supabase の起動状態を確認                                        |
 
 ### 各コマンドの詳細
 
@@ -247,14 +247,41 @@ Supabase の起動状態・各サービスのポートを確認できます。
 
 ## pnpm コマンド
 
-| コマンド | 説明 |
-|----------|------|
-| `pnpm dev` | Next.js 開発サーバーのみ起動（Supabase は別途起動が必要） |
-| `pnpm build` | 本番ビルド |
-| `pnpm start` | 本番ビルドのサーバー起動 |
-| `pnpm test` | テスト実行（watch モード） |
-| `pnpm test:run` | テスト実行（一回のみ） |
-| `pnpm test:coverage` | カバレッジレポート付きテスト |
+| コマンド             | 説明                                                      |
+| -------------------- | --------------------------------------------------------- |
+| `pnpm dev`           | Next.js 開発サーバーのみ起動（Supabase は別途起動が必要） |
+| `pnpm build`         | 本番ビルド                                                |
+| `pnpm start`         | 本番ビルドのサーバー起動                                  |
+| `pnpm test`          | テスト実行（watch モード）                                |
+| `pnpm test:run`      | テスト実行（一回のみ）                                    |
+| `pnpm test:coverage` | カバレッジレポート付きテスト                              |
+| `pnpm format`        | Prettier でコード全体をフォーマット                       |
+| `pnpm format:check`  | フォーマットのチェックのみ（CI 用）                       |
+
+---
+
+## デバッグ
+
+### ログレベルの変更
+
+デフォルトのログレベルは `warn` です。より詳細なログを出力したい場合は、`.env.local` に以下を追加します。
+
+```env
+# サーバーサイド（API Route・Server Component）のログレベル
+LOG_LEVEL=debug
+
+# クライアントサイド（ブラウザ）のログレベル
+NEXT_PUBLIC_LOG_LEVEL=debug
+```
+
+| レベル  | 出力内容                                                                    |
+| ------- | --------------------------------------------------------------------------- |
+| `error` | 想定外のエラーのみ（DB障害・外部API失敗など）                               |
+| `warn`  | エラー + 期待される失敗（認証失敗・バリデーション失敗など）**← デフォルト** |
+| `info`  | warn + 主要フローの正常完了（セッション発行・ロッカー作成など）             |
+| `debug` | info + 詳細情報（クエリ結果件数・中間値など）                               |
+
+設定変更後は開発サーバーを再起動してください。
 
 ---
 
@@ -266,13 +293,13 @@ Supabase の起動状態・各サービスのポートを確認できます。
 
 Vercel ダッシュボード → Settings → Environment Variables に以下を登録します。
 
-| 変数名 | 取得場所 |
-|--------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase ダッシュボード → Settings → API → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase ダッシュボード → Settings → API → anon public |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase ダッシュボード → Settings → API → service_role |
-| `APP_PASSWORD` | 任意のパスワード（投稿・編集時に使用） |
-| `SESSION_SECRET` | 32文字以上のランダム文字列（`openssl rand -base64 32`） |
+| 変数名                          | 取得場所                                                |
+| ------------------------------- | ------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase ダッシュボード → Settings → API → Project URL  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase ダッシュボード → Settings → API → anon public  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase ダッシュボード → Settings → API → service_role |
+| `APP_PASSWORD`                  | 任意のパスワード（投稿・編集時に使用）                  |
+| `SESSION_SECRET`                | 32文字以上のランダム文字列（`openssl rand -base64 32`） |
 
 ### Supabase 本番テーブルの作成
 
@@ -303,10 +330,10 @@ CREATE TABLE locker_photos (
 
 Supabase ダッシュボード → Storage → New bucket で以下を作成します。
 
-| 項目 | 値 |
-|------|----|
+| 項目       | 値              |
+| ---------- | --------------- |
 | バケット名 | `locker-photos` |
-| Public | オン |
+| Public     | オン            |
 
 ---
 

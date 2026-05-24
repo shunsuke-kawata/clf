@@ -11,16 +11,9 @@ type Props = {
 };
 
 export default async function HomePage({ searchParams }: Props) {
-  const [lockers, role, params] = await Promise.all([
-    getLockers(),
-    getSession(),
-    searchParams,
-  ]);
+  const [lockers, role, params] = await Promise.all([getLockers(), getSession(), searchParams]);
   const { lat, lng } = params;
-  const flyTo =
-    lat && lng
-      ? { lat: parseFloat(lat), lng: parseFloat(lng) }
-      : null;
+  const flyTo = lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
 
   return (
     <main className="relative">

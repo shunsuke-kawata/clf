@@ -11,7 +11,9 @@ const { getPhotoUrl } = await import("./photo");
 
 describe("getPhotoUrl", () => {
   describe("開発環境（isProd=false）", () => {
-    beforeEach(() => { mockConfig.isProd = false; });
+    beforeEach(() => {
+      mockConfig.isProd = false;
+    });
 
     it("プロキシURL /api/photos/proxy?key=... を返す", () => {
       const url = getPhotoUrl("http://127.0.0.1:54321", "lockers/uuid-1/photo.jpg");
@@ -30,7 +32,9 @@ describe("getPhotoUrl", () => {
   });
 
   describe("本番環境（isProd=true）", () => {
-    beforeEach(() => { mockConfig.isProd = true; });
+    beforeEach(() => {
+      mockConfig.isProd = true;
+    });
 
     it("Supabase Storage の直リンクを返す", () => {
       const url = getPhotoUrl("https://abc.supabase.co", "lockers/uuid-1/photo.jpg");

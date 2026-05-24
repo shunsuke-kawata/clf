@@ -20,9 +20,7 @@ export default async function AdminPage() {
       .from("lockers")
       .select("id, note, created_at, locker_photos(id, storage_key, order_index)")
       .order("created_at", { ascending: false }),
-    supabaseAdmin
-      .from("locker_photos")
-      .select("id", { count: "exact", head: true }),
+    supabaseAdmin.from("locker_photos").select("id", { count: "exact", head: true }),
   ]);
 
   const lockers = lockersResult.data ?? [];
@@ -30,45 +28,47 @@ export default async function AdminPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-[800] bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
+      <header className="bg-background/95 sticky top-0 z-[800] flex h-14 items-center gap-3 border-b px-4 backdrop-blur-sm">
         <Link
           href={PAGE_ROUTES.home}
-          className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent -ml-2 flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="地図に戻る"
         >
           ←
         </Link>
-        <div className="flex-1 flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2">
           <h1 className="text-base font-semibold">管理画面</h1>
-          <Badge variant="outline" className="text-xs">ADMIN</Badge>
+          <Badge variant="outline" className="text-xs">
+            ADMIN
+          </Badge>
         </div>
         <Link
           href={PAGE_ROUTES.newLocker}
-          className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="新規投稿"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="h-5 w-5" />
         </Link>
-        <LogoutButton className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" />
+        <LogoutButton className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-11 w-11 items-center justify-center rounded-full transition-colors" />
       </header>
 
       <main className="flex flex-col gap-6 py-6">
         {/* 統計 */}
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-4 mb-3">
+          <h2 className="text-muted-foreground mb-3 px-4 text-sm font-semibold tracking-wide uppercase">
             Statistics
           </h2>
           <div className="grid grid-cols-2 gap-2 px-4">
             <Card>
               <CardContent className="p-4 text-center">
                 <p className="text-3xl font-bold tabular-nums">{lockers.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">ロッカー</p>
+                <p className="text-muted-foreground mt-1 text-xs">ロッカー</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <p className="text-3xl font-bold tabular-nums">{photoCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">写真</p>
+                <p className="text-muted-foreground mt-1 text-xs">写真</p>
               </CardContent>
             </Card>
           </div>
@@ -76,7 +76,7 @@ export default async function AdminPage() {
 
         {/* ロッカー一覧 */}
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-4 mb-3">
+          <h2 className="text-muted-foreground mb-3 px-4 text-sm font-semibold tracking-wide uppercase">
             Lockers
           </h2>
           <div className="px-4">

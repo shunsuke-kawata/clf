@@ -13,9 +13,7 @@ import { useEffect } from "react";
  */
 export function usePreventIOSZoom() {
   useEffect(() => {
-    const meta = document.querySelector<HTMLMetaElement>(
-      'meta[name="viewport"]'
-    );
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
     if (!meta) return;
 
     const original = meta.content;
@@ -29,8 +27,7 @@ export function usePreventIOSZoom() {
         )
       )
         return;
-      meta!.content =
-        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
+      meta!.content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
     }
 
     function unlock(e: FocusEvent) {

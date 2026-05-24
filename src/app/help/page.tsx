@@ -5,22 +5,22 @@ import { PAGE_ROUTES } from "@/lib/routes";
 
 export default function HelpPage() {
   return (
-    <main className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
+    <main className="bg-background min-h-dvh">
+      <header className="bg-background/80 sticky top-0 z-10 flex items-center gap-2 border-b px-4 py-3 backdrop-blur-sm">
         <Link
           href={PAGE_ROUTES.home}
-          className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full hover:bg-muted transition-colors"
+          className="hover:bg-muted -ml-2 flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="地図に戻る"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-base font-semibold">使い方</h1>
       </header>
 
       {/* ヒーロー */}
       <div className="bg-muted/40 border-b px-4 py-6 text-center">
-        <h2 className="text-2xl font-bold mb-1">CLFの使い方</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="mb-1 text-2xl font-bold">CLFの使い方</h2>
+        <p className="text-muted-foreground text-sm">
           コインロッカーを地図に記録・管理するアプリです
         </p>
       </div>

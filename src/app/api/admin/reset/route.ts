@@ -16,9 +16,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   logger.debug("[admin/reset] fetching all photo storage keys");
-  const { data: photos } = await supabaseAdmin
-    .from("locker_photos")
-    .select("storage_key");
+  const { data: photos } = await supabaseAdmin.from("locker_photos").select("storage_key");
 
   if (photos && photos.length > 0) {
     const keys = photos.map((p: { storage_key: string }) => p.storage_key);
@@ -33,10 +31,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   logger.debug("[admin/reset] deleting all lockers from DB");
-  const { error } = await supabaseAdmin
-    .from("lockers")
-    .delete()
-    .not("id", "is", null);
+  const { error } = await supabaseAdmin.from("lockers").delete().not("id", "is", null);
 
   if (error) {
     logger.error("[admin/reset] DB reset failed", error);

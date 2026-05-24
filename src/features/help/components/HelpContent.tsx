@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { MapPin, Search, Navigation, List, LogIn, Plus, Pencil, Trash2, LogOut, HelpCircle } from "lucide-react";
+import {
+  MapPin,
+  Search,
+  Navigation,
+  List,
+  LogIn,
+  Plus,
+  Pencil,
+  Trash2,
+  LogOut,
+  HelpCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export type HelpSection = {
@@ -11,31 +22,31 @@ export type HelpSection = {
 };
 
 export const HELP_SECTIONS = [
-  { id: "overview",  title: "CLFとは",                   icon: <HelpCircle className="w-4 h-4" /> },
-  { id: "map",       title: "地図の基本操作",             icon: <MapPin className="w-4 h-4" /> },
-  { id: "detail",    title: "ロッカー情報を見る",         icon: <List className="w-4 h-4" /> },
-  { id: "search",    title: "場所・ロッカーを探す",       icon: <Search className="w-4 h-4" /> },
-  { id: "admin",     title: "登録・編集・削除（管理者）", icon: <Plus className="w-4 h-4" /> },
-  { id: "faq",       title: "うまくいかない時は",         icon: <HelpCircle className="w-4 h-4" /> },
+  { id: "overview", title: "CLFとは", icon: <HelpCircle className="h-4 w-4" /> },
+  { id: "map", title: "地図の基本操作", icon: <MapPin className="h-4 w-4" /> },
+  { id: "detail", title: "ロッカー情報を見る", icon: <List className="h-4 w-4" /> },
+  { id: "search", title: "場所・ロッカーを探す", icon: <Search className="h-4 w-4" /> },
+  { id: "admin", title: "登録・編集・削除（管理者）", icon: <Plus className="h-4 w-4" /> },
+  { id: "faq", title: "うまくいかない時は", icon: <HelpCircle className="h-4 w-4" /> },
 ] as const satisfies HelpSection[];
 
-export type HelpSectionId = typeof HELP_SECTIONS[number]["id"];
+export type HelpSectionId = (typeof HELP_SECTIONS)[number]["id"];
 
 type StepProps = { steps: string[]; note?: string };
 
 function Steps({ steps, note }: StepProps) {
   return (
-    <ol className="flex flex-col gap-2 mt-3">
+    <ol className="mt-3 flex flex-col gap-2">
       {steps.map((step, i) => (
         <li key={i} className="flex gap-3 text-sm leading-relaxed">
-          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 mt-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+          <span className="bg-primary text-primary-foreground mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold">
             {i + 1}
           </span>
           <span>{step}</span>
         </li>
       ))}
       {note && (
-        <li className="flex gap-2 text-sm text-muted-foreground bg-muted rounded-lg px-3 py-2 mt-1">
+        <li className="text-muted-foreground bg-muted mt-1 flex gap-2 rounded-lg px-3 py-2 text-sm">
           <span className="flex-shrink-0">💡</span>
           <span>{note}</span>
         </li>
@@ -48,7 +59,7 @@ type WarnProps = { children: React.ReactNode };
 
 function Warn({ children }: WarnProps) {
   return (
-    <div className="flex gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mt-3">
+    <div className="text-destructive bg-destructive/10 border-destructive/20 mt-3 flex gap-2 rounded-lg border px-3 py-2 text-sm">
       <span className="flex-shrink-0">⚠️</span>
       <span>{children}</span>
     </div>
@@ -61,14 +72,26 @@ function SectionContent({ id }: { id: HelpSectionId }) {
       return (
         <div className="flex flex-col gap-3 text-sm leading-relaxed">
           <p>
-            CLF（Coin Locker Finder）は、<strong>「また使いたいコインロッカー」を地図に記録して管理する</strong>プライベートメモツールです。
+            CLF（Coin Locker Finder）は、
+            <strong>「また使いたいコインロッカー」を地図に記録して管理する</strong>
+            プライベートメモツールです。
           </p>
           <p>
             旅先や遠征先で見つけた便利なロッカーを登録しておけば、次回訪問時にすぐ見つけられます。
           </p>
           <ul className="flex flex-col gap-1.5 pl-1">
-            <li className="flex gap-2"><span>👁️</span><span><strong>閲覧</strong>: 誰でも地図とロッカー情報を見られます</span></li>
-            <li className="flex gap-2"><span>✏️</span><span><strong>登録・編集</strong>: パスワードでログインした管理者のみ操作できます</span></li>
+            <li className="flex gap-2">
+              <span>👁️</span>
+              <span>
+                <strong>閲覧</strong>: 誰でも地図とロッカー情報を見られます
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span>✏️</span>
+              <span>
+                <strong>登録・編集</strong>: パスワードでログインした管理者のみ操作できます
+              </span>
+            </li>
           </ul>
         </div>
       );
@@ -119,8 +142,8 @@ function SectionContent({ id }: { id: HelpSectionId }) {
       return (
         <div className="flex flex-col gap-6">
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <Search className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <Search className="h-4 w-4" />
               会場名・駅名で検索する
             </div>
             <Steps
@@ -132,8 +155,8 @@ function SectionContent({ id }: { id: HelpSectionId }) {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <Navigation className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <Navigation className="h-4 w-4" />
               現在地に移動する
             </div>
             <Steps
@@ -146,8 +169,8 @@ function SectionContent({ id }: { id: HelpSectionId }) {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <List className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <List className="h-4 w-4" />
               近くのロッカーをリストで見る
             </div>
             <Steps
@@ -165,13 +188,13 @@ function SectionContent({ id }: { id: HelpSectionId }) {
     case "admin":
       return (
         <div className="flex flex-col gap-6">
-          <div className="flex gap-2 text-sm bg-muted rounded-lg px-3 py-2">
+          <div className="bg-muted flex gap-2 rounded-lg px-3 py-2 text-sm">
             <span className="flex-shrink-0">🔒</span>
             <span>このセクションの操作はパスワードでのログインが必要です</span>
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <LogIn className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <LogIn className="h-4 w-4" />
               ログインする
             </div>
             <Steps
@@ -183,8 +206,8 @@ function SectionContent({ id }: { id: HelpSectionId }) {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <Plus className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <Plus className="h-4 w-4" />
               ロッカーを新しく登録する
             </div>
             <Steps
@@ -199,8 +222,8 @@ function SectionContent({ id }: { id: HelpSectionId }) {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <Pencil className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <Pencil className="h-4 w-4" />
               ロッカー情報を編集する
             </div>
             <Steps
@@ -212,8 +235,8 @@ function SectionContent({ id }: { id: HelpSectionId }) {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <Trash2 className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <Trash2 className="h-4 w-4" />
               ロッカーを削除する
             </div>
             <Steps
@@ -226,15 +249,12 @@ function SectionContent({ id }: { id: HelpSectionId }) {
             <Warn>削除したロッカーは元に戻せません。</Warn>
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <LogOut className="w-4 h-4" />
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <LogOut className="h-4 w-4" />
               ログアウトする
             </div>
             <Steps
-              steps={[
-                "画面右にあるドアのアイコンをタップします",
-                "ログアウト状態に戻ります",
-              ]}
+              steps={["画面右にあるドアのアイコンをタップします", "ログアウト状態に戻ります"]}
             />
           </div>
         </div>
@@ -281,7 +301,9 @@ type Props = {
 export function HelpContent({ onSectionChange }: Props) {
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const onSectionChangeRef = useRef(onSectionChange);
-  useEffect(() => { onSectionChangeRef.current = onSectionChange; });
+  useEffect(() => {
+    onSectionChangeRef.current = onSectionChange;
+  });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -313,11 +335,13 @@ export function HelpContent({ onSectionChange }: Props) {
           }}
           className="scroll-mt-20"
         >
-          <div className="flex items-center gap-2 mb-4">
+          <div className="mb-4 flex items-center gap-2">
             <span className="text-primary">{section.icon}</span>
             <h2 className="text-base font-semibold">{section.title}</h2>
             {section.id === "admin" && (
-              <Badge variant="secondary" className="text-xs">管理者のみ</Badge>
+              <Badge variant="secondary" className="text-xs">
+                管理者のみ
+              </Badge>
             )}
           </div>
           <SectionContent id={section.id} />
@@ -326,4 +350,3 @@ export function HelpContent({ onSectionChange }: Props) {
     </div>
   );
 }
-

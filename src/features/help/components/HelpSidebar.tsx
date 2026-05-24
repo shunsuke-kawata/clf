@@ -16,7 +16,7 @@ export function HelpToc({ activeId, onSelect }: Props) {
             <a
               href={`#${section.id}`}
               onClick={onSelect}
-              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                 activeId === section.id
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"

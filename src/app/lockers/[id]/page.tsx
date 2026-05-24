@@ -14,25 +14,25 @@ export default async function LockerDetailPage({ params }: Props) {
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
+      <header className="bg-background/95 sticky top-0 z-10 flex h-14 items-center gap-3 border-b px-4 backdrop-blur-sm">
         <Link
           href="/"
-          className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent -ml-2 flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="地図に戻る"
         >
           ←
         </Link>
-        <h1 className="text-base font-semibold truncate">コインロッカー詳細</h1>
+        <h1 className="truncate text-base font-semibold">コインロッカー詳細</h1>
         <Link
           href={`/admin/${locker.id}/edit`}
-          className="ml-auto flex items-center justify-center w-11 h-11 -mr-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent -mr-2 ml-auto flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="編集"
         >
-          <Pencil className="w-5 h-5" />
+          <Pencil className="h-5 w-5" />
         </Link>
       </header>
 
-      <main className="max-w-lg mx-auto pb-10">
+      <main className="mx-auto max-w-lg pb-10">
         <LockerDetail locker={locker} supabaseUrl={serverEnv.SUPABASE_URL} />
       </main>
     </>

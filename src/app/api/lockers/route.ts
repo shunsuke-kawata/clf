@@ -34,18 +34,14 @@ export async function POST(req: NextRequest) {
 
   if (!parsed.success) {
     logger.warn("[lockers] create validation failed", parsed.error.flatten());
-    return NextResponse.json(
-      { error: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  logger.debug("[lockers] create: validation ok, inserting to DB", { lat: parsed.data.lat, lng: parsed.data.lng });
-  const { data, error } = await supabaseAdmin
-    .from("lockers")
-    .insert(parsed.data)
-    .select()
-    .single();
+  logger.debug("[lockers] create: validation ok, inserting to DB", {
+    lat: parsed.data.lat,
+    lng: parsed.data.lng,
+  });
+  const { data, error } = await supabaseAdmin.from("lockers").insert(parsed.data).select().single();
 
   if (error) {
     logger.error("[lockers] create failed", error);
