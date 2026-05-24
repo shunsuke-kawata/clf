@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
+import { X } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { API_ROUTES } from "@/lib/routes";
 import { APP_CONFIG } from "@/lib/config";
@@ -15,6 +16,7 @@ type SearchResult = {
 
 type Props = {
   onResult: (lat: number, lng: number, name: string) => void;
+  onClear?: () => void;
 };
 
 function getCurrentPosition(): Promise<GeolocationPosition> {
@@ -25,10 +27,11 @@ function getCurrentPosition(): Promise<GeolocationPosition> {
   );
 }
 
-export function VenueSearchBar({ onResult }: Props) {
+export function VenueSearchBar({ onResult, onClear }: Props) {
   const map = useMap();
   const containerRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
+  const [isCommitted, setIsCommitted] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,6 +44,7 @@ export function VenueSearchBar({ onResult }: Props) {
   }, []);
 
   useEffect(() => {
+    if (isCommitted) return;
     if (query.trim().length < 2) {
       setSuggestions([]);
       setOpen(false);
@@ -57,17 +61,28 @@ export function VenueSearchBar({ onResult }: Props) {
       setOpen(data.length > 0);
     }, 400);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, isCommitted]);
 
   function commit(result: SearchResult) {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
+    const shortName = result.display_name.split(",")[0].trim();
     map.flyTo([lat, lng], 16, { duration: 1.5 });
     onResult(lat, lng, result.display_name);
-    setQuery("");
+    setQuery(shortName);
+    setIsCommitted(true);
     setSuggestions([]);
     setOpen(false);
     setError("");
+  }
+
+  function handleClear() {
+    setQuery("");
+    setIsCommitted(false);
+    setSuggestions([]);
+    setOpen(false);
+    setError("");
+    onClear?.();
   }
 
   async function handleSearch(e: React.FormEvent) {
@@ -136,14 +151,24 @@ export function VenueSearchBar({ onResult }: Props) {
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
+              setIsCommitted(false);
               setError("");
             }}
-            onFocus={() => suggestions.length > 0 && setOpen(true)}
+            onFocus={() => !isCommitted && suggestions.length > 0 && setOpen(true)}
             placeholder="会場名・駅名で検索"
             className="min-w-0 flex-1 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
             autoComplete="off"
           />
-          {loading ? (
+          {isCommitted ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="検索をクリア"
+              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center text-gray-400"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : loading ? (
             <span className="shrink-0 text-xs text-gray-400">…</span>
           ) : (
             <button
