@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMapEvents,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -18,11 +12,7 @@ import { APP_CONFIG } from "@/lib/config";
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions(APP_CONFIG.map.leafletIcons);
 
-function ClickHandler({
-  onChange,
-}: {
-  onChange: (lat: number, lng: number) => void;
-}) {
+function ClickHandler({ onChange }: { onChange: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
       onChange(e.latlng.lat, e.latlng.lng);
@@ -48,21 +38,13 @@ function MapResizer() {
 }
 
 // flyTarget が変わったときだけ地図を移動する
-function FlyToController({
-  target,
-}: {
-  target: { lat: number; lng: number } | null;
-}) {
+function FlyToController({ target }: { target: { lat: number; lng: number } | null }) {
   const map = useMap();
   const prevTarget = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!target) return;
-    if (
-      prevTarget.current?.lat === target.lat &&
-      prevTarget.current?.lng === target.lng
-    )
-      return;
+    if (prevTarget.current?.lat === target.lat && prevTarget.current?.lng === target.lng) return;
     prevTarget.current = target;
     map.flyTo([target.lat, target.lng], APP_CONFIG.map.pickerFlyZoom, { duration: 0.8 });
   }, [target, map]);
@@ -77,12 +59,7 @@ type Props = {
   flyTarget?: { lat: number; lng: number } | null;
 };
 
-export default function MapPicker({
-  lat,
-  lng,
-  onChange,
-  flyTarget = null,
-}: Props) {
+export default function MapPicker({ lat, lng, onChange, flyTarget = null }: Props) {
   return (
     <MapContainer
       center={[lat, lng]}

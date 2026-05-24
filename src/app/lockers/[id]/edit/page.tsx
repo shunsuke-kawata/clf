@@ -19,16 +19,16 @@ export default async function EditLockerPage({ params }: Props) {
 
   return (
     <>
-      <header className="sticky top-0 z-[800] bg-background/95 backdrop-blur-sm border-b flex items-center gap-3 px-4 h-14">
+      <header className="bg-background/95 sticky top-0 z-[800] flex h-14 items-center gap-3 border-b px-4 backdrop-blur-sm">
         <Link
           href={PAGE_ROUTES.lockerDetail(locker.id)}
-          className="flex items-center justify-center w-11 h-11 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent -ml-2 flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="詳細に戻る"
         >
           ←
         </Link>
         <h1 className="flex-1 text-base font-semibold">編集</h1>
-        <LogoutButton className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" />
+        <LogoutButton className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-11 w-11 items-center justify-center rounded-full transition-colors" />
       </header>
       <LockerForm
         mode="edit"

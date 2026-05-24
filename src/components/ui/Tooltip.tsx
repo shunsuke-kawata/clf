@@ -26,8 +26,8 @@ export function Tooltip({ tooltipKey, children, side = "left", className }: Prop
             collisionPadding={8}
             sideOffset={8}
             className={cn(
-              "z-[9999] rounded-md bg-foreground px-2.5 py-1.5 text-xs text-background shadow-md",
-              "select-none whitespace-nowrap",
+              "bg-foreground text-background z-[9999] rounded-md px-2.5 py-1.5 text-xs shadow-md",
+              "whitespace-nowrap select-none",
               className
             )}
           >

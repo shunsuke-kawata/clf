@@ -5,4 +5,7 @@ import { serverEnv } from "@/lib/env";
 export const supabaseReader = createClient(serverEnv.SUPABASE_URL, serverEnv.ANON_KEY);
 
 // 書き込み（INSERT/UPDATE/DELETE）: service_role key
-export const supabaseAdmin = createClient(serverEnv.SUPABASE_URL, serverEnv.SUPABASE_SERVICE_ROLE_KEY);
+export const supabaseAdmin = createClient(
+  serverEnv.SUPABASE_URL,
+  serverEnv.SUPABASE_SERVICE_ROLE_KEY
+);

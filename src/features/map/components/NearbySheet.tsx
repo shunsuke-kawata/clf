@@ -1,12 +1,7 @@
 "use client";
 
 import { Navigation } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { LockerIcon } from "@/components/icons/LockerIcon";
 import type { Locker } from "@/features/locker/schemas/locker";
 import { haversineDistance, formatDistance } from "@/lib/utils/distance";
@@ -29,13 +24,7 @@ function lockerLabel(locker: Locker): string {
   return "コインロッカー";
 }
 
-export function NearbySheet({
-  open,
-  onClose,
-  lockers,
-  userLocation,
-  onSelectLocker,
-}: Props) {
+export function NearbySheet({ open, onClose, lockers, userLocation, onSelectLocker }: Props) {
   const sorted = userLocation
     ? [...lockers].sort((a, b) => {
         const da = haversineDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
@@ -45,7 +34,12 @@ export function NearbySheet({
     : lockers;
 
   return (
-    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <SheetContent
         side="bottom"
         showCloseButton
@@ -56,13 +50,11 @@ export function NearbySheet({
         </SheetHeader>
 
         {!userLocation && (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            位置情報を取得中...
-          </p>
+          <p className="text-muted-foreground py-8 text-center text-sm">位置情報を取得中...</p>
         )}
 
         {userLocation && sorted.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">
+          <p className="text-muted-foreground py-8 text-center text-sm">
             登録されたロッカーがありません
           </p>
         )}
@@ -82,27 +74,23 @@ export function NearbySheet({
                 <li key={locker.id} className="flex items-center gap-3 py-3">
                   <button
                     type="button"
-                    className="flex items-center gap-3 flex-1 text-left min-w-0"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
                     onClick={() => onSelectLocker(locker)}
                   >
-                    <LockerIcon className="w-8 h-8 shrink-0 text-foreground" />
-                    <span className="flex flex-col gap-0.5 min-w-0">
-                      <span className="text-sm font-medium truncate">
-                        {lockerLabel(locker)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistance(dist)}
-                      </span>
+                    <LockerIcon className="text-foreground h-8 w-8 shrink-0" />
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">{lockerLabel(locker)}</span>
+                      <span className="text-muted-foreground text-xs">{formatDistance(dist)}</span>
                     </span>
                   </button>
                   <a
                     href={mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shrink-0 active:opacity-70"
+                    className="bg-primary text-primary-foreground flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium active:opacity-70"
                     aria-label="Googleマップで経路案内"
                   >
-                    <Navigation className="w-3 h-3" />
+                    <Navigation className="h-3 w-3" />
                     ナビ
                   </a>
                 </li>

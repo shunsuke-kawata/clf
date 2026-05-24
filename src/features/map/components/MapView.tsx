@@ -39,7 +39,8 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
   function flyToIfNeeded(lat: number, lng: number) {
     const targetZoom = APP_CONFIG.map.currentLocationZoom;
     const dist = map.distance(map.getCenter(), [lat, lng]);
-    if (dist < APP_CONFIG.map.currentLocationSkipDistanceMeters && map.getZoom() >= targetZoom) return;
+    if (dist < APP_CONFIG.map.currentLocationSkipDistanceMeters && map.getZoom() >= targetZoom)
+      return;
     map.flyTo([lat, lng], targetZoom, { duration: 1.5 });
   }
 
@@ -55,7 +56,9 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
     setLoading(true);
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: APP_CONFIG.map.geolocationTimeout })
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: APP_CONFIG.map.geolocationTimeout,
+        })
       );
       flyToIfNeeded(pos.coords.latitude, pos.coords.longitude);
     } catch (e) {
@@ -66,22 +69,29 @@ function CurrentLocationButton({ currentPosition }: { currentPosition: UserLocat
   }
 
   return (
-    <div ref={containerRef} className="absolute bottom-44 right-4 z-[1000]">
+    <div ref={containerRef} className="absolute right-4 bottom-44 z-[1000]">
       <Tooltip tooltipKey="currentLocation">
         <button
           type="button"
           onClick={handleClick}
           disabled={loading}
           aria-label="現在地に戻る"
-          className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 disabled:opacity-50 active:scale-95 transition-transform"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-blue-500 shadow-lg transition-transform active:scale-95 disabled:opacity-50"
         >
           {loading ? (
-            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
           ) : (
-            <Navigation className="w-6 h-6" />
+            <Navigation className="h-6 w-6" />
           )}
         </button>
       </Tooltip>
@@ -156,22 +166,29 @@ function NearbyButton({
   }
 
   return (
-    <div ref={containerRef} className="absolute bottom-24 right-4 z-[1000]">
+    <div ref={containerRef} className="absolute right-4 bottom-24 z-[1000]">
       <Tooltip tooltipKey="nearbyLockers">
         <button
           type="button"
           onClick={handleClick}
           disabled={loading}
           aria-label="近くのロッカーを探す"
-          className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-primary disabled:opacity-50 active:scale-95 transition-transform"
+          className="text-primary flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95 disabled:opacity-50"
         >
           {loading ? (
-            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
           ) : (
-            <LockerIcon className="w-6 h-6 text-primary" />
+            <LockerIcon className="text-primary h-6 w-6" />
           )}
         </button>
       </Tooltip>
@@ -247,17 +264,15 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
             setNearbyOpen(true);
           }}
         />
-        {currentPosition && <UserLocationMarker lat={currentPosition.lat} lng={currentPosition.lng} />}
+        {currentPosition && (
+          <UserLocationMarker lat={currentPosition.lat} lng={currentPosition.lng} />
+        )}
         <VenueSearchBar onResult={(lat, lng, name) => setSearchPin({ lat, lng, name })} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
         {flyToLocker && <FlyToHandler lat={flyToLocker.lat} lng={flyToLocker.lng} />}
         {lockers.map((locker) => (
-          <LockerMarker
-            key={locker.id}
-            locker={locker}
-            onSelect={setSelectedLockerId}
-          />
+          <LockerMarker key={locker.id} locker={locker} onSelect={setSelectedLockerId} />
         ))}
         {searchPin && <SearchResultMarker {...searchPin} />}
       </MapContainer>

@@ -41,7 +41,7 @@ export function AdminLockerList({ lockers: initial, supabaseUrl }: Props) {
     try {
       const res = await fetch(API_ROUTES.lockers.delete(pendingId), { method: "DELETE" });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? `HTTP ${res.status}`);
       }
       setLockers((prev) => prev.filter((l) => l.id !== pendingId));
@@ -67,7 +67,7 @@ export function AdminLockerList({ lockers: initial, supabaseUrl }: Props) {
 
   if (lockers.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-8">
+      <p className="text-muted-foreground py-8 text-center text-sm">
         登録されているロッカーはありません
       </p>
     );
@@ -81,39 +81,49 @@ export function AdminLockerList({ lockers: initial, supabaseUrl }: Props) {
           const photoCount = locker.locker_photos.length;
 
           return (
-            <li key={locker.id} className="flex items-center gap-3 px-4 py-3 bg-card border rounded-xl">
-              <div className="w-12 h-12 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+            <li
+              key={locker.id}
+              className="bg-card flex items-center gap-3 rounded-xl border px-4 py-3"
+            >
+              <div className="bg-muted flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg">
                 {photoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={photoUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <MapPin className="w-5 h-5 text-muted-foreground" />
+                  <MapPin className="text-muted-foreground h-5 w-5" />
                 )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm truncate">{locker.note || "メモなし"}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm">{locker.note || "メモなし"}</p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <Badge variant="secondary" className="px-1.5 py-0 text-xs">
                     写真{photoCount}枚
                   </Badge>
-                  <span className="text-xs text-muted-foreground">{formatDate(locker.created_at)}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {formatDate(locker.created_at)}
+                  </span>
                 </div>
               </div>
 
               <button
-                className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-colors"
                 onClick={() => setPendingId(locker.id)}
                 aria-label="削除"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </li>
           );
         })}
       </ul>
 
-      <AlertDialog open={pendingId !== null} onOpenChange={(open) => { if (!open) setPendingId(null); }}>
+      <AlertDialog
+        open={pendingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>このロッカーを削除しますか？</AlertDialogTitle>

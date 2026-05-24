@@ -7,38 +7,33 @@ type Props = {
 };
 
 export function LockerDetail({ locker, supabaseUrl }: Props) {
-  const photos = [...(locker.locker_photos ?? [])].sort(
-    (a, b) => a.order_index - b.order_index
-  );
+  const photos = [...(locker.locker_photos ?? [])].sort((a, b) => a.order_index - b.order_index);
 
   return (
     <>
       {photos.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto px-4 pt-4 pb-2 snap-x snap-mandatory">
+        <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pt-4 pb-2">
           {photos.map((photo) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={photo.id}
               src={getPhotoUrl(supabaseUrl, photo.storage_key)}
               alt="ロッカー写真"
-              className="h-52 w-auto rounded-xl object-cover flex-shrink-0 snap-start"
+              className="h-52 w-auto flex-shrink-0 snap-start rounded-xl object-cover"
             />
           ))}
         </div>
       )}
 
-      <div className="px-4 pt-4 flex flex-col gap-5">
+      <div className="flex flex-col gap-5 px-4 pt-4">
         {locker.pricing.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            <h2 className="text-muted-foreground mb-2 text-sm font-semibold tracking-wide uppercase">
               料金
             </h2>
             <div className="flex flex-wrap gap-2">
               {locker.pricing.map((price, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1.5 rounded-full bg-muted text-sm font-medium"
-                >
+                <span key={i} className="bg-muted rounded-full px-3 py-1.5 text-sm font-medium">
                   ¥{price.toLocaleString()}
                 </span>
               ))}
@@ -48,15 +43,15 @@ export function LockerDetail({ locker, supabaseUrl }: Props) {
 
         {locker.note && (
           <section>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            <h2 className="text-muted-foreground mb-2 text-sm font-semibold tracking-wide uppercase">
               メモ
             </h2>
-            <p className="text-sm whitespace-pre-wrap leading-relaxed">{locker.note}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{locker.note}</p>
           </section>
         )}
 
         {locker.pricing.length === 0 && !locker.note && photos.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">情報がありません</p>
+          <p className="text-muted-foreground py-8 text-center text-sm">情報がありません</p>
         )}
       </div>
     </>

@@ -28,10 +28,7 @@ export async function POST(req: NextRequest) {
   const orderIndex = Number(formData.get("order_index") ?? 0);
 
   if (!(file instanceof File) || typeof lockerId !== "string" || !lockerId) {
-    return NextResponse.json(
-      { error: "file and locker_id are required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "file and locker_id are required" }, { status: 400 });
   }
 
   const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";

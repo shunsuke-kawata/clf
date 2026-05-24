@@ -23,13 +23,8 @@ export function LogoutButton({ className }: Props) {
 
   return (
     <Tooltip tooltipKey="logout" side="left">
-      <button
-        type="button"
-        onClick={handleLogout}
-        className={className}
-        aria-label="ログアウト"
-      >
-        <LogOut className="w-5 h-5" />
+      <button type="button" onClick={handleLogout} className={className} aria-label="ログアウト">
+        <LogOut className="h-5 w-5" />
       </button>
     </Tooltip>
   );

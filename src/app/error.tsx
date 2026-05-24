@@ -17,9 +17,9 @@ export default function ErrorPage({ error, reset }: Props) {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
-      <AlertTriangle className="w-12 h-12 text-destructive" />
+      <AlertTriangle className="text-destructive h-12 w-12" />
       <h1 className="text-lg font-semibold">エラーが発生しました</h1>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         ページの読み込みに失敗しました。時間をおいて再試行してください。
       </p>
       <Button onClick={reset} className="min-h-[44px]">

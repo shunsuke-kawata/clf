@@ -17,10 +17,10 @@ export function MapFabs({ role }: Props) {
       <Tooltip tooltipKey="help" side="right">
         <Link
           href={PAGE_ROUTES.help}
-          className="absolute top-[68px] left-4 z-[1000] flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-md border"
+          className="bg-secondary text-secondary-foreground absolute top-[68px] left-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md"
           aria-label="使い方"
         >
-          <HelpCircle className="w-5 h-5" />
+          <HelpCircle className="h-5 w-5" />
         </Link>
       </Tooltip>
 
@@ -28,10 +28,10 @@ export function MapFabs({ role }: Props) {
         <Tooltip tooltipKey="login" side="left">
           <Link
             href={PAGE_ROUTES.login}
-            className="absolute bottom-6 right-4 z-[1000] flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg"
+            className="bg-primary text-primary-foreground absolute right-4 bottom-6 z-[1000] flex h-14 w-14 items-center justify-center rounded-full shadow-lg"
             aria-label="ログイン"
           >
-            <LogIn className="w-6 h-6" />
+            <LogIn className="h-6 w-6" />
           </Link>
         </Tooltip>
       )}
@@ -40,10 +40,10 @@ export function MapFabs({ role }: Props) {
         <Tooltip tooltipKey="newLocker" side="left">
           <Link
             href={PAGE_ROUTES.newLocker}
-            className="absolute bottom-6 right-4 z-[1000] flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg"
+            className="bg-primary text-primary-foreground absolute right-4 bottom-6 z-[1000] flex h-14 w-14 items-center justify-center rounded-full shadow-lg"
             aria-label="新規投稿"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="h-6 w-6" />
           </Link>
         </Tooltip>
       )}
@@ -52,17 +52,17 @@ export function MapFabs({ role }: Props) {
         <Tooltip tooltipKey="admin" side="left">
           <Link
             href={PAGE_ROUTES.admin}
-            className="absolute top-[68px] right-4 z-[1000] flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-md border"
+            className="bg-secondary text-secondary-foreground absolute top-[68px] right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md"
             aria-label="管理画面"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="h-5 w-5" />
           </Link>
         </Tooltip>
       )}
 
       {role && (
         <LogoutButton
-          className={`absolute ${role === "admin" ? "top-[132px]" : "top-[68px]"} right-4 z-[1000] flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-md border`}
+          className={`absolute ${role === "admin" ? "top-[132px]" : "top-[68px]"} bg-secondary text-secondary-foreground right-4 z-[1000] flex h-14 w-14 items-center justify-center rounded-full border shadow-md`}
         />
       )}
     </>
