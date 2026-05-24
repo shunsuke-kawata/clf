@@ -83,7 +83,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     if (data.length > 0) setHistoryOpen(true);
   }
 
-  function commit(result: SearchResult, queryText: string) {
+  function commit(result: SearchResult) {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
     const shortName = result.display_name.split(",")[0].trim();
@@ -99,7 +99,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     fetch(API_ROUTES.searchHistory.upsert, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: queryText }),
+      body: JSON.stringify({ query: shortName }),
     }).catch((e) => logger.error("[VenueSearchBar] history upsert failed", e));
   }
 
@@ -120,7 +120,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
       return;
     }
     setQuery(item.query);
-    commit(results[0], item.query);
+    commit(results[0]);
   }
 
   async function deleteHistory(id: string) {
@@ -167,7 +167,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     }
 
     if (results.length === 1) {
-      commit(results[0], query.trim());
+      commit(results[0]);
       return;
     }
 
@@ -180,9 +180,9 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
         const bd = (parseFloat(best.lat) - uLat) ** 2 + (parseFloat(best.lon) - uLng) ** 2;
         return d < bd ? r : best;
       });
-      commit(nearest, query.trim());
+      commit(nearest);
     } catch {
-      commit(results[0], query.trim());
+      commit(results[0]);
     }
   }
 
@@ -256,7 +256,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
               <button
                 type="button"
                 className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
-                onClick={() => commit(s, query.trim())}
+                onClick={() => commit(s)}
               >
                 <svg
                   className="h-4 w-4 shrink-0 text-gray-400"
