@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
-import { X } from "lucide-react";
+import { X, Clock } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { API_ROUTES } from "@/lib/routes";
 import { APP_CONFIG } from "@/lib/config";
@@ -12,6 +12,12 @@ type SearchResult = {
   lat: string;
   lon: string;
   display_name: string;
+};
+
+type HistoryItem = {
+  id: string;
+  query: string;
+  searched_at: string;
 };
 
 type Props = {
@@ -33,7 +39,9 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
   const [query, setQuery] = useState("");
   const [isCommitted, setIsCommitted] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -59,11 +67,23 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
       const data: SearchResult[] = await res.json();
       setSuggestions(data);
       setOpen(data.length > 0);
+      if (data.length > 0) setHistoryOpen(false);
     }, 400);
     return () => clearTimeout(timer);
   }, [query, isCommitted]);
 
-  function commit(result: SearchResult) {
+  async function fetchHistory() {
+    const res = await fetch(API_ROUTES.searchHistory.list);
+    if (!res.ok) {
+      logger.warn("[VenueSearchBar] history fetch failed", { status: res.status });
+      return;
+    }
+    const data: HistoryItem[] = await res.json();
+    setHistory(data);
+    if (data.length > 0) setHistoryOpen(true);
+  }
+
+  function commit(result: SearchResult, queryText: string) {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
     const shortName = result.display_name.split(",")[0].trim();
@@ -73,7 +93,43 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     setIsCommitted(true);
     setSuggestions([]);
     setOpen(false);
+    setHistoryOpen(false);
     setError("");
+
+    fetch(API_ROUTES.searchHistory.upsert, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: queryText }),
+    }).catch((e) => logger.error("[VenueSearchBar] history upsert failed", e));
+  }
+
+  async function commitFromHistory(item: HistoryItem) {
+    setHistoryOpen(false);
+    setLoading(true);
+    setError("");
+    const res = await fetch(API_ROUTES.geocode.search(item.query));
+    setLoading(false);
+    if (!res.ok) {
+      logger.error("[VenueSearchBar] history search failed", { status: res.status });
+      setError("検索に失敗しました");
+      return;
+    }
+    const results: SearchResult[] = await res.json();
+    if (results.length === 0) {
+      setError("場所が見つかりませんでした");
+      return;
+    }
+    setQuery(item.query);
+    commit(results[0], item.query);
+  }
+
+  async function deleteHistory(id: string) {
+    const res = await fetch(API_ROUTES.searchHistory.delete(id), { method: "DELETE" });
+    if (!res.ok) {
+      logger.warn("[VenueSearchBar] history delete failed", { status: res.status });
+      return;
+    }
+    setHistory((prev) => prev.filter((h) => h.id !== id));
   }
 
   function handleClear() {
@@ -81,6 +137,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     setIsCommitted(false);
     setSuggestions([]);
     setOpen(false);
+    setHistoryOpen(false);
     setError("");
     onClear?.();
   }
@@ -89,6 +146,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     e.preventDefault();
     if (!query.trim()) return;
     setError("");
+    setHistoryOpen(false);
 
     let results = suggestions;
     if (results.length === 0) {
@@ -109,7 +167,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     }
 
     if (results.length === 1) {
-      commit(results[0]);
+      commit(results[0], query.trim());
       return;
     }
 
@@ -122,12 +180,13 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
         const bd = (parseFloat(best.lat) - uLat) ** 2 + (parseFloat(best.lon) - uLng) ** 2;
         return d < bd ? r : best;
       });
-      commit(nearest);
+      commit(nearest, query.trim());
     } catch {
-      // 位置情報拒否の場合は先頭結果を使用
-      commit(results[0]);
+      commit(results[0], query.trim());
     }
   }
+
+  const showHistory = historyOpen && !open && history.length > 0 && !isCommitted;
 
   return (
     <div ref={containerRef} className="absolute top-3 right-4 left-4 z-[1000]">
@@ -153,8 +212,17 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
               setQuery(e.target.value);
               setIsCommitted(false);
               setError("");
+              if (e.target.value.trim().length === 0) {
+                setHistoryOpen(history.length > 0);
+              }
             }}
-            onFocus={() => !isCommitted && suggestions.length > 0 && setOpen(true)}
+            onFocus={() => {
+              if (!isCommitted && suggestions.length > 0) {
+                setOpen(true);
+              } else if (!isCommitted && query.trim().length === 0) {
+                fetchHistory();
+              }
+            }}
             placeholder="会場名・駅名で検索"
             className="min-w-0 flex-1 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
             autoComplete="off"
@@ -188,7 +256,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
               <button
                 type="button"
                 className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
-                onClick={() => commit(s)}
+                onClick={() => commit(s, query.trim())}
               >
                 <svg
                   className="h-4 w-4 shrink-0 text-gray-400"
@@ -210,6 +278,31 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
                   />
                 </svg>
                 <span className="block truncate text-gray-700">{s.display_name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {showHistory && (
+        <ul className="mt-2 max-h-60 overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-lg">
+          {history.map((h) => (
+            <li key={h.id} className="flex items-center">
+              <button
+                type="button"
+                className="flex flex-1 items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
+                onClick={() => commitFromHistory(h)}
+              >
+                <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className="block truncate text-gray-700">{h.query}</span>
+              </button>
+              <button
+                type="button"
+                aria-label="履歴を削除"
+                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center text-gray-400 hover:text-gray-600"
+                onClick={() => deleteHistory(h.id)}
+              >
+                <X className="h-4 w-4" />
               </button>
             </li>
           ))}
