@@ -10,7 +10,8 @@ export const APP_CONFIG = {
   map: {
     defaultCenter: { lat: 35.6812, lng: 139.7671 } as const,
     defaultZoom: 15,
-    maxZoom: 19,
+    maxNativeZoom: 19,
+    maxZoom: 21,
     currentLocationZoom: 16,
     currentLocationSkipDistanceMeters: 50,
     pickerZoom: 19,
