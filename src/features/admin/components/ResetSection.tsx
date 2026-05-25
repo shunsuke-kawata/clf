@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { TriangleAlert } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,6 @@ import { logger } from "@/lib/logger";
 const CONFIRM_WORD = "RESET";
 
 export function ResetSection() {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [resetting, setResetting] = useState(false);
@@ -37,7 +35,7 @@ export function ResetSection() {
       }
       toast.success("すべてのデータを削除しました");
       setOpen(false);
-      router.refresh();
+      window.location.reload();
     } catch (e) {
       logger.error("[ResetSection] reset failed", e);
       toast.error("リセットに失敗しました");

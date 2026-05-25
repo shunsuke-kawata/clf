@@ -15,7 +15,7 @@ const { mockChain, mockFrom, mockStorageBucket } = vi.hoisted(() => {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
-    not: vi.fn().mockResolvedValue({ error: null }),
+    not: vi.fn().mockResolvedValue({ error: null, count: 0 }),
   };
   return {
     mockChain,
@@ -43,7 +43,7 @@ beforeEach(() => {
   mockChain.select.mockReturnThis();
   mockChain.eq.mockReturnThis();
   mockChain.delete.mockReturnThis();
-  mockChain.not.mockResolvedValue({ error: null });
+  mockChain.not.mockResolvedValue({ error: null, count: 0 });
   mockFrom.mockReturnValue(mockChain);
   mockStorageBucket.remove.mockResolvedValue({ error: null });
 });
@@ -61,21 +61,39 @@ describe("DELETE /api/admin/reset", () => {
     expect(res.status).toBe(403);
   });
 
-  it("admin 権限でリセット成功時に 204 を返す", async () => {
+  it("admin 権限でリセット成功時に 204 を返す（search_history も削除）", async () => {
     mockGetSessionRole.mockResolvedValue("admin");
+    // locker_photos.select
     mockChain.select.mockResolvedValueOnce({ data: [{ storage_key: "photo/1.jpg" }], error: null });
-    mockChain.not.mockResolvedValueOnce({ error: null });
+    // lockers.delete
+    mockChain.not.mockResolvedValueOnce({ error: null, count: 2 });
+    // search_history.delete（デフォルトの { error: null, count: 0 } が使われる）
 
     const res = await DELETE(makeRequest());
     expect(res.status).toBe(204);
+    // lockers と search_history の 2 回 delete を呼ぶ
+    expect(mockChain.delete).toHaveBeenCalledTimes(2);
   });
 
-  it("admin 権限で DB エラー時に 500 を返す", async () => {
+  it("admin 権限で lockers DB エラー時に 500 を返す", async () => {
     mockGetSessionRole.mockResolvedValue("admin");
     mockChain.select.mockResolvedValueOnce({ data: [], error: null });
-    mockChain.not.mockResolvedValueOnce({ error: { message: "delete failed" } });
+    mockChain.not.mockResolvedValueOnce({ error: { message: "delete failed" }, count: null });
 
     const res = await DELETE(makeRequest());
     expect(res.status).toBe(500);
+  });
+
+  it("admin 権限で search_history DB エラー時も 204 を返す", async () => {
+    mockGetSessionRole.mockResolvedValue("admin");
+    // locker_photos.select
+    mockChain.select.mockResolvedValueOnce({ data: [], error: null });
+    // lockers.delete: 成功
+    mockChain.not.mockResolvedValueOnce({ error: null, count: 1 });
+    // search_history.delete: 失敗（warn ログのみ）
+    mockChain.not.mockResolvedValueOnce({ error: { message: "history delete failed" }, count: null });
+
+    const res = await DELETE(makeRequest());
+    expect(res.status).toBe(204);
   });
 });

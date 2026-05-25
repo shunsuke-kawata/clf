@@ -31,13 +31,26 @@ export async function DELETE(req: NextRequest) {
   }
 
   logger.debug("[admin/reset] deleting all lockers from DB");
-  const { error } = await supabaseAdmin.from("lockers").delete().not("id", "is", null);
+  const { error: lockersError, count: deletedCount } = await supabaseAdmin
+    .from("lockers")
+    .delete({ count: "exact" })
+    .not("id", "is", null);
 
-  if (error) {
-    logger.error("[admin/reset] DB reset failed", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (lockersError) {
+    logger.error("[admin/reset] DB reset failed", lockersError);
+    return NextResponse.json({ error: lockersError.message }, { status: 500 });
   }
 
-  logger.info("[admin/reset] all data reset");
+  logger.info("[admin/reset] lockers deleted", { count: deletedCount });
+
+  const { error: historyError } = await supabaseAdmin
+    .from("search_history")
+    .delete()
+    .not("id", "is", null);
+
+  if (historyError) {
+    logger.warn("[admin/reset] search_history reset failed", historyError);
+  }
+
   return new NextResponse(null, { status: 204 });
 }
