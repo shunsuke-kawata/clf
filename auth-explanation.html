@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLF — JWT認証の仕組み</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #f8fafc;
+    }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 3rem;
+    }
+
+    /* ===== SECTION ===== */
+    .section {
+      max-width: 900px;
+      margin: 0 auto 3rem;
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #38bdf8;
+      border-left: 4px solid #38bdf8;
+      padding-left: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ===== FLOW DIAGRAM ===== */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+    }
+    .flow-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 44px;
+      flex-shrink: 0;
+    }
+    .flow-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .flow-line {
+      width: 2px;
+      flex: 1;
+      background: #334155;
+      margin: 2px 0;
+      min-height: 16px;
+    }
+    .flow-body {
+      flex: 1;
+      padding-bottom: 1.5rem;
+    }
+    .flow-body:last-child { padding-bottom: 0; }
+    .flow-label {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+    .flow-desc {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.6rem;
+    }
+    .flow-code {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.8rem;
+      color: #a5f3fc;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .comment { color: #64748b; }
+    .keyword { color: #f472b6; }
+    .string  { color: #86efac; }
+    .fn      { color: #fbbf24; }
+    .type    { color: #a78bfa; }
+    .num     { color: #fb923c; }
+
+    /* colors per step */
+    .c-blue   { background: #1d4ed8; color: #eff6ff; }
+    .c-violet { background: #6d28d9; color: #f5f3ff; }
+    .c-green  { background: #065f46; color: #d1fae5; }
+    .c-orange { background: #92400e; color: #fef3c7; }
+    .c-red    { background: #991b1b; color: #fee2e2; }
+    .c-teal   { background: #0f766e; color: #ccfbf1; }
+
+    /* ===== TOKEN ANATOMY ===== */
+    .jwt-parts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .jwt-part {
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .jwt-header  { background: #1e40af; color: #bfdbfe; }
+    .jwt-payload { background: #166534; color: #bbf7d0; }
+    .jwt-sig     { background: #7c2d12; color: #fed7aa; }
+    .jwt-dot     { color: #64748b; align-self: center; }
+
+    .jwt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .jwt-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      background: #1e293b;
+      color: #94a3b8;
+      font-weight: 600;
+      border-bottom: 1px solid #334155;
+    }
+    .jwt-table td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid #1e293b;
+      vertical-align: top;
+    }
+    .jwt-table tr:last-child td { border-bottom: none; }
+    .jwt-table tr:hover td { background: #1e293b44; }
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .badge-blue   { background: #1e40af; color: #bfdbfe; }
+    .badge-green  { background: #166534; color: #bbf7d0; }
+    .badge-orange { background: #92400e; color: #fef3c7; }
+
+    /* ===== TOKEN LIFETIME ===== */
+    .timeline-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .tl-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .tl-label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .tl-bar-track {
+      background: #1e293b;
+      border-radius: 4px;
+      height: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .tl-bar {
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding-left: 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .tl-access  { background: #1d4ed8; color: #eff6ff; width: 5%; }
+    .tl-refresh { background: #6d28d9; color: #f5f3ff; width: 100%; }
+    .tl-note {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    /* ===== VERIFY FLOW ===== */
+    .decision-tree {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+    .dt-node {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0 0 1rem 0;
+      position: relative;
+    }
+    .dt-node::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 36px;
+      bottom: 0;
+      width: 2px;
+      background: #334155;
+    }
+    .dt-node:last-child::before { display: none; }
+    .dt-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .dt-text { flex: 1; }
+    .dt-q { font-weight: 700; font-size: 0.9rem; }
+    .dt-a { font-size: 0.8rem; color: #94a3b8; margin-top: 0.2rem; }
+
+    /* ===== ROLES ===== */
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .role-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .role-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .role-item {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      padding: 0.25rem 0;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .role-item::before { content: "•"; color: #475569; flex-shrink: 0; }
+
+    /* ===== SECURITY CALLOUT ===== */
+    .callouts { display: flex; flex-direction: column; gap: 0.75rem; }
+    .callout {
+      background: #1e293b;
+      border-left: 4px solid;
+      border-radius: 0 8px 8px 0;
+      padding: 0.75rem 1rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.4; }
+    .callout-body {}
+    .callout-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .callout-desc  { font-size: 0.82rem; color: #94a3b8; }
+    .cl-green  { border-color: #22c55e; }
+    .cl-blue   { border-color: #38bdf8; }
+    .cl-orange { border-color: #fb923c; }
+    .cl-violet { border-color: #a78bfa; }
+
+    /* ===== OVERVIEW BOX ===== */
+    .overview {
+      max-width: 900px;
+      margin: 0 auto 3rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .ov-item {
+      text-align: center;
+    }
+    .ov-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .ov-key {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+    }
+    .divider {
+      width: 1px;
+      background: #334155;
+    }
+
+    @media (max-width: 600px) {
+      .jwt-parts { font-size: 0.68rem; }
+      .flow-code { font-size: 0.72rem; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>CLF — JWT認証の仕組み</h1>
+<p class="subtitle">
+  <code>src/features/auth/lib/auth.ts</code> のコードフローに沿って解説
+</p>
+
+<!-- ===== OVERVIEW ===== -->
+<div class="overview">
+  <div class="overview-grid">
+    <div class="ov-item">
+      <div class="ov-val">HS256</div>
+      <div class="ov-key">JWT署名アルゴリズム<br>（HMAC-SHA256）</div>
+    </div>
+    <div class="divider"></div>
+    <div class="ov-item">
+      <div class="ov-val">15分</div>
+      <div class="ov-key">Access Token 有効期限<br><code>clf_access</code> Cookie</div>
+    </div>
+    <div class="divider"></div>
+    <div class="ov-item">
+      <div class="ov-val">30日</div>
+      <div class="ov-key">Refresh Token 有効期限<br><code>clf_refresh</code> Cookie</div>
+    </div>
+    <div class="divider"></div>
+    <div class="ov-item">
+      <div class="ov-val">httpOnly</div>
+      <div class="ov-key">Cookie フラグ<br>JS から読めない</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 1. ログインフロー ===== -->
+<div class="section">
+  <div class="section-title">① ログインフロー（パスワード入力 → JWT発行）</div>
+  <div class="flow">
+
+    <!-- Step 1 -->
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-circle c-blue">1</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <div class="flow-label">ユーザーがパスワードを入力</div>
+        <div class="flow-desc">
+          <code>LoginForm.tsx</code> — React Server Action <code>loginAction</code> を呼び出す
+        </div>
+        <div class="flow-code"><span class="comment">// LoginForm.tsx（クライアントコンポーネント）</span>
+<span class="keyword">const</span> [state, action, pending] = <span class="fn">useActionState</span>(loginAction.<span class="fn">bind</span>(<span class="keyword">null</span>, variant), <span class="keyword">null</span>);
+
+<span class="comment">// &lt;form action={action}&gt; でフォームを送信すると Server Action が実行される</span></div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-circle c-blue">2</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <div class="flow-label">Server Action でパスワード照合</div>
+        <div class="flow-desc">
+          <code>actions.ts</code> → <code>checkPassword()</code> — タイミング攻撃を防ぐ定数時間比較
+        </div>
+        <div class="flow-code"><span class="comment">// features/auth/actions.ts（Server Action）</span>
+<span class="keyword">const</span> role = <span class="fn">checkPassword</span>(password);   <span class="comment">// "admin" | "user" | null</span>
+<span class="keyword">if</span> (!role || role !== variant) {
+  <span class="keyword">return</span> { error: <span class="string">"パスワードが違います"</span> };
+}
+<span class="keyword">await</span> <span class="fn">createSession</span>(role);            <span class="comment">// JWT を発行して Cookie にセット</span>
+<span class="fn">redirect</span>(PAGE_ROUTES.home);
+
+<span class="comment">// ↓ checkPassword の中身</span>
+<span class="keyword">function</span> <span class="fn">comparePassword</span>(input: <span class="type">string</span>, stored: <span class="type">string</span>): <span class="type">boolean</span> {
+  <span class="keyword">const</span> a = Buffer.<span class="fn">from</span>(input);
+  <span class="keyword">const</span> b = Buffer.<span class="fn">from</span>(stored);
+  <span class="keyword">if</span> (a.length !== b.length) <span class="keyword">return false</span>;
+  <span class="keyword">return</span> <span class="fn">timingSafeEqual</span>(a, b);  <span class="comment">// 文字数で処理時間が変わらない</span>
+}</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-circle c-violet">3</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <div class="flow-label">JWT を2種類発行（Access / Refresh）</div>
+        <div class="flow-desc">
+          <code>createSession()</code> が <code>issueJwt()</code> を並列実行して2トークン生成
+        </div>
+        <div class="flow-code"><span class="comment">// auth.ts — createSession()</span>
+<span class="keyword">const</span> [accessToken, refreshToken] = <span class="keyword">await</span> Promise.<span class="fn">all</span>([
+  <span class="fn">issueJwt</span>(ACCESS_COOKIE, role, <span class="string">"15m"</span>),   <span class="comment">// clf_access  → 15分</span>
+  <span class="fn">issueJwt</span>(REFRESH_COOKIE, role, <span class="string">"30d"</span>),  <span class="comment">// clf_refresh → 30日</span>
+]);
+
+<span class="comment">// ↓ JWT の中身</span>
+<span class="keyword">async function</span> <span class="fn">issueJwt</span>(subject, role, expiresIn) {
+  <span class="keyword">return new</span> <span class="fn">SignJWT</span>({ role })            <span class="comment">// payload: { role: "admin"|"user" }</span>
+    .<span class="fn">setProtectedHeader</span>({ alg: <span class="string">"HS256"</span> }) <span class="comment">// HS256 = HMAC-SHA256</span>
+    .<span class="fn">setSubject</span>(subject)                  <span class="comment">// sub = "clf_access" or "clf_refresh"</span>
+    .<span class="fn">setIssuedAt</span>()                         <span class="comment">// iat = 現在時刻</span>
+    .<span class="fn">setExpirationTime</span>(expiresIn)          <span class="comment">// exp = 期限</span>
+    .<span class="fn">sign</span>(<span class="fn">getSecret</span>());                   <span class="comment">// SESSION_SECRET で署名</span>
+}</div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-circle c-green">4</div>
+      </div>
+      <div class="flow-body">
+        <div class="flow-label">Cookie としてブラウザに保存</div>
+        <div class="flow-desc">
+          <code>httpOnly</code> フラグ付き → JavaScript からは読めない。<code>secure</code> フラグは本番のみ
+        </div>
+        <div class="flow-code"><span class="keyword">function</span> <span class="fn">cookieOptions</span>(maxAge: <span class="type">number</span>) {
+  <span class="keyword">return</span> {
+    httpOnly: <span class="keyword">true</span>,                     <span class="comment">// ← XSS でトークン盗難を防ぐ</span>
+    secure: NODE_ENV === <span class="string">"production"</span>,  <span class="comment">// ← 本番は HTTPS 必須</span>
+    sameSite: <span class="string">"lax"</span>,                  <span class="comment">// ← CSRF 緩和</span>
+    maxAge,                            <span class="comment">// accessMaxAge=900s / refreshMaxAge=2592000s</span>
+    path: <span class="string">"/"</span>,
+  };
+}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 2. JWT の構造 ===== -->
+<div class="section">
+  <div class="section-title">② JWT（JSON Web Token）の構造</div>
+  <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1rem;">
+    JWTは <code>.</code> で区切られた3パートのBase64URL文字列。サーバーは署名を検証するだけで DB 照会不要。
+  </p>
+  <div class="jwt-parts">
+    <span class="jwt-part jwt-header">eyJhbGciOiJIUzI1NiJ9</span>
+    <span class="jwt-dot">.</span>
+    <span class="jwt-part jwt-payload">eyJyb2xlIjoidXNlciIsInN1YiI6ImNsZl9hY2Nlc3MiLCJpYXQiOjE3MTYwMDAwMDAsImV4cCI6MTcxNjAwMDkwMH0</span>
+    <span class="jwt-dot">.</span>
+    <span class="jwt-part jwt-sig">HMAC_SHA256_SIGNATURE</span>
+  </div>
+
+  <table class="jwt-table">
+    <thead>
+      <tr>
+        <th>パート</th>
+        <th>中身</th>
+        <th>CLFでの値</th>
+        <th>役割</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-blue">Header</span></td>
+        <td><code>{ "alg": "HS256" }</code></td>
+        <td>固定</td>
+        <td>署名アルゴリズムを宣言</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">Payload</span></td>
+        <td><code>role, sub, iat, exp</code></td>
+        <td>
+          <code>role</code>: <code>"admin"</code> or <code>"user"</code><br>
+          <code>sub</code>: <code>"clf_access"</code> or <code>"clf_refresh"</code>
+        </td>
+        <td>誰がどの権限でいつまで有効か</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-orange">Signature</span></td>
+        <td><code>HMAC_SHA256(header+payload, SESSION_SECRET)</code></td>
+        <td>毎回異なる</td>
+        <td>改ざん検知。秘密鍵なしに偽造不可</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:1rem;font-size:0.82rem;color:#64748b;">
+    ⚠️ Payload は Base64URL なので <strong>誰でもデコードできる</strong>。秘密情報（パスワード等）は絶対に入れない。
+  </div>
+</div>
+
+<!-- ===== 3. トークン有効期限 ===== -->
+<div class="section">
+  <div class="section-title">③ Access Token / Refresh Token の使い分け</div>
+  <div class="timeline-wrap">
+    <div class="tl-row">
+      <div class="tl-label">Access Token（clf_access） — 15分</div>
+      <div class="tl-bar-track">
+        <div class="tl-bar tl-access">15m</div>
+      </div>
+      <div class="tl-note">短命。盗まれても即座に使えなくなる。</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label">Refresh Token（clf_refresh） — 30日</div>
+      <div class="tl-bar-track">
+        <div class="tl-bar tl-refresh">30d</div>
+      </div>
+      <div class="tl-note">長命。Access が切れた後にこれで再認証（再ログイン不要）。</div>
+    </div>
+  </div>
+  <div style="margin-top:1.25rem;">
+    <div class="flow-code"><span class="comment">// config.ts — APP_CONFIG.auth</span>
+accessTokenExpiry: <span class="string">"15m"</span>,     accessMaxAge:  <span class="num">60</span> * <span class="num">15</span>,          <span class="comment">// 900秒</span>
+refreshTokenExpiry: <span class="string">"30d"</span>,    refreshMaxAge: <span class="num">60</span> * <span class="num">60</span> * <span class="num">24</span> * <span class="num">30</span>, <span class="comment">// 2592000秒</span></div>
+  </div>
+</div>
+
+<!-- ===== 4. 検証フロー ===== -->
+<div class="section">
+  <div class="section-title">④ リクエスト時の認証検証フロー（verifySessionCookies）</div>
+  <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1.25rem;">
+    <code>getSession()</code>（Server Component）/ <code>getSessionRole(req)</code>（API Route）から呼ばれる
+  </p>
+  <div class="decision-tree">
+
+    <div class="dt-node">
+      <div class="dt-icon" style="background:#1e40af;">🍪</div>
+      <div class="dt-text">
+        <div class="dt-q">Cookie から <code>clf_access</code> を取得</div>
+        <div class="dt-a">ブラウザが自動送信 → サーバーで読み取る</div>
+      </div>
+    </div>
+
+    <div class="dt-node">
+      <div class="dt-icon" style="background:#166534;">✅</div>
+      <div class="dt-text">
+        <div class="dt-q">Access Token の検証成功 → ロール返却</div>
+        <div class="dt-a"><code>jwtVerify(token, secret)</code> で署名・有効期限・sub を確認。OKなら即返却。</div>
+      </div>
+    </div>
+
+    <div class="dt-node">
+      <div class="dt-icon" style="background:#92400e;">⚠️</div>
+      <div class="dt-text">
+        <div class="dt-q">Access Token が無効・期限切れ → Refresh Token にフォールバック</div>
+        <div class="dt-a"><code>clf_refresh</code> Cookie を読み、同様に <code>jwtVerify</code> で検証</div>
+      </div>
+    </div>
+
+    <div class="dt-node">
+      <div class="dt-icon" style="background:#166534;">✅</div>
+      <div class="dt-text">
+        <div class="dt-q">Refresh Token の検証成功 → ロール返却</div>
+        <div class="dt-a">30日以内であれば再認証なしでセッション継続</div>
+      </div>
+    </div>
+
+    <div class="dt-node">
+      <div class="dt-icon" style="background:#991b1b;">❌</div>
+      <div class="dt-text">
+        <div class="dt-q">両方無効 → <code>null</code> 返却（未認証）</div>
+        <div class="dt-a">呼び出し元がログインページへリダイレクト</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:1rem;">
+    <div class="flow-code"><span class="comment">// auth.ts — verifySessionCookies（実際のコード）</span>
+<span class="keyword">async function</span> <span class="fn">verifySessionCookies</span>(store: <span class="type">CookieGetter</span>): <span class="type">Promise</span>&lt;<span class="type">SessionRole</span> | <span class="keyword">null</span>&gt; {
+  <span class="keyword">const</span> accessToken = store.<span class="fn">get</span>(ACCESS_COOKIE)?.value;
+  <span class="keyword">if</span> (accessToken) {
+    <span class="keyword">const</span> role = <span class="keyword">await</span> <span class="fn">tryVerifyJwt</span>(accessToken, ACCESS_COOKIE);
+    <span class="keyword">if</span> (role !== <span class="keyword">null</span>) <span class="keyword">return</span> role;    <span class="comment">// ← 成功：即返却</span>
+  }
+
+  <span class="keyword">const</span> refreshToken = store.<span class="fn">get</span>(REFRESH_COOKIE)?.value;
+  <span class="keyword">if</span> (!refreshToken) <span class="keyword">return null</span>;      <span class="comment">// ← Cookie 自体なし</span>
+
+  <span class="keyword">return</span> <span class="fn">tryVerifyJwt</span>(refreshToken, REFRESH_COOKIE);  <span class="comment">// ← フォールバック</span>
+}</div>
+  </div>
+</div>
+
+<!-- ===== 5. ロール ===== -->
+<div class="section">
+  <div class="section-title">⑤ ロール（admin / user）の違い</div>
+  <div class="roles-grid">
+    <div class="role-card">
+      <div class="role-title">
+        <span style="color:#f472b6;">👑</span>
+        <span style="color:#f472b6;">admin ロール</span>
+      </div>
+      <div class="role-item">管理者パスワード（<code>ADMIN_PASSWORD</code>）でログイン</div>
+      <div class="role-item">ロッカーの投稿・編集・削除</div>
+      <div class="role-item"><code>/admin/*</code> ルートへアクセス可</div>
+      <div class="role-item">写真のアップロード・削除</div>
+    </div>
+    <div class="role-card">
+      <div class="role-title">
+        <span style="color:#38bdf8;">👤</span>
+        <span style="color:#38bdf8;">user ロール</span>
+      </div>
+      <div class="role-item">一般パスワード（<code>APP_PASSWORD</code>）でログイン</div>
+      <div class="role-item">ロッカーの閲覧のみ</div>
+      <div class="role-item">地図の検索・操作</div>
+      <div class="role-item">投稿・編集・削除は不可</div>
+    </div>
+    <div class="role-card">
+      <div class="role-title">
+        <span style="color:#94a3b8;">🌐</span>
+        <span style="color:#94a3b8;">未ログイン（null）</span>
+      </div>
+      <div class="role-item">ロッカー一覧・詳細の閲覧（GET）のみ</div>
+      <div class="role-item">ログイン不要でも地図は見える</div>
+      <div class="role-item">書き込み系 API は 401 返却</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 6. ログアウト ===== -->
+<div class="section">
+  <div class="section-title">⑥ ログアウト（destroySession）</div>
+  <div class="flow-code"><span class="comment">// auth.ts — destroySession()</span>
+<span class="keyword">export async function</span> <span class="fn">destroySession</span>(): <span class="type">Promise</span>&lt;<span class="keyword">void</span>&gt; {
+  <span class="keyword">const</span> cookieStore = <span class="keyword">await</span> <span class="fn">cookies</span>();
+  cookieStore.<span class="fn">delete</span>(ACCESS_COOKIE);   <span class="comment">// clf_access  を削除</span>
+  cookieStore.<span class="fn">delete</span>(REFRESH_COOKIE);  <span class="comment">// clf_refresh を削除</span>
+}</div>
+  <p style="font-size:0.82rem;color:#94a3b8;margin-top:0.75rem;">
+    Cookie を削除するだけ。JWT はサーバー側にブラックリストを持たないのでトークン自体は期限まで有効だが、
+    Cookie がなければリクエスト時に届かないため実質無効になる。
+  </p>
+</div>
+
+<!-- ===== 7. セキュリティのポイント ===== -->
+<div class="section">
+  <div class="section-title">⑦ セキュリティ上の工夫</div>
+  <div class="callouts">
+    <div class="callout cl-green">
+      <div class="callout-icon">🛡️</div>
+      <div class="callout-body">
+        <div class="callout-title">httpOnly Cookie — XSS 対策</div>
+        <div class="callout-desc">
+          JWT を <code>httpOnly</code> Cookie に保存することで、悪意ある JavaScript から
+          <code>document.cookie</code> でトークンを盗まれるリスクをゼロにする。
+          <code>localStorage</code> に保存する実装より安全。
+        </div>
+      </div>
+    </div>
+    <div class="callout cl-blue">
+      <div class="callout-icon">⏱️</div>
+      <div class="callout-body">
+        <div class="callout-title">timingSafeEqual — タイミング攻撃対策</div>
+        <div class="callout-desc">
+          通常の <code>===</code> 比較は一致しない文字で処理が止まる（最初の1文字で早期リターン）ため、
+          比較時間の差から正しいパスワードを推測できる。<code>timingSafeEqual</code> は常に全文字を比較し時間が一定。
+        </div>
+      </div>
+    </div>
+    <div class="callout cl-orange">
+      <div class="callout-icon">🔄</div>
+      <div class="callout-body">
+        <div class="callout-title">Access + Refresh の2トークン — トークン盗難リスク低減</div>
+        <div class="callout-desc">
+          頻繁に使う Access Token を短命（15分）にすることで、万が一漏洩しても被害範囲を限定。
+          Refresh Token は長命（30日）だが、使用頻度が低くリスクが小さい。
+        </div>
+      </div>
+    </div>
+    <div class="callout cl-violet">
+      <div class="callout-icon">🔏</div>
+      <div class="callout-body">
+        <div class="callout-title">sub クレームによるトークン流用防止</div>
+        <div class="callout-desc">
+          Access Token の <code>sub</code> は <code>"clf_access"</code>、
+          Refresh Token の <code>sub</code> は <code>"clf_refresh"</code> と異なる値。
+          <code>tryVerifyJwt</code> で <code>payload.sub !== expectedSub</code> のときは拒否するため、
+          Refresh Token を Access Token として使う流用攻撃を防ぐ。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
