@@ -1,0 +1,659 @@
+openapi: 3.1.0
+info:
+  title: CLF (Coin Locker Finder) API
+  version: 1.0.0
+  description: |-
+    コインロッカーをプライベートに記録・管理するアプリ CLF の API 仕様書。
+
+    ## 認証
+    JWT（HS256）を httpOnly Cookie で管理する。
+    - `clf_access` — Access Token（有効期限 15 分）
+    - `clf_refresh` — Refresh Token（有効期限 30 日）
+
+    ## ロール
+    | ロール | 説明 |
+    |--------|------|
+    | `user`  | 一般ユーザー。閲覧・投稿・編集が可能 |
+    | `admin` | 管理者。削除・リセット操作が可能 |
+servers:
+  - url: https://clf-kohl.vercel.app
+    description: 本番環境
+  - url: http://localhost:3000
+    description: ローカル開発環境
+tags:
+  - name: auth
+    description: 認証（ログイン / ログアウト / トークンリフレッシュ）
+  - name: lockers
+    description: コインロッカーの CRUD
+  - name: photos
+    description: 写真のアップロード
+  - name: geocode
+    description: 住所・会場名の検索（Photon プロキシ）
+  - name: search-history
+    description: 検索履歴（セッション Cookie で管理）
+  - name: admin
+    description: 管理者専用操作
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: clf_access
+      description: JWT Access Token（httpOnly Cookie）。有効期限 15 分。
+  schemas:
+    SessionRole:
+      type: string
+      enum:
+        - user
+        - admin
+      description: セッションロール
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: エラーメッセージ
+      required:
+        - error
+    LockerInput:
+      type: object
+      properties:
+        lat:
+          type: number
+          description: 緯度
+          example: 35.6812
+        lng:
+          type: number
+          description: 経度
+          example: 139.7671
+        note:
+          type: string
+          description: メモ（任意）
+          example: B1 左の列
+        pricing:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          description: 料金一覧（円、正の整数）
+          example:
+            - 300
+            - 500
+            - 700
+      required:
+        - lat
+        - lng
+        - pricing
+    Locker:
+      allOf:
+        - $ref: "#/components/schemas/LockerInput"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: ロッカー UUID
+            created_at:
+              type: string
+              format: date-time
+              description: 作成日時（ISO 8601）
+            updated_at:
+              type: string
+              format: date-time
+              description: 更新日時（ISO 8601）
+          required:
+            - id
+            - created_at
+            - updated_at
+    LockerPhoto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        locker_id:
+          type: string
+          format: uuid
+        storage_key:
+          type: string
+          description: Supabase Storage のオブジェクトキー
+          example: abc123/photo.jpg
+        order_index:
+          type: integer
+          description: 表示順
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - locker_id
+        - storage_key
+        - order_index
+        - created_at
+    LockerWithPhotos:
+      allOf:
+        - $ref: "#/components/schemas/Locker"
+        - type: object
+          properties:
+            locker_photos:
+              type: array
+              items:
+                $ref: "#/components/schemas/LockerPhoto"
+          required:
+            - locker_photos
+    GeocodeResult:
+      type: object
+      properties:
+        lat:
+          type: string
+          description: 緯度（文字列）
+          example: "35.6812"
+        lon:
+          type: string
+          description: 経度（文字列）
+          example: "139.7671"
+        display_name:
+          type: string
+          description: 表示名
+          example: 東京駅, 東京
+      required:
+        - lat
+        - lon
+        - display_name
+    SearchHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        query:
+          type: string
+          example: 東京駅
+        lat:
+          type:
+            - number
+            - "null"
+          example: 35.6812
+        lng:
+          type:
+            - number
+            - "null"
+          example: 139.7671
+        display_name:
+          type:
+            - string
+            - "null"
+          example: 東京駅, 東京
+        searched_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - query
+        - lat
+        - lng
+        - display_name
+        - searched_at
+  parameters: {}
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: ログイン
+      description: パスワードを検証し、JWT を httpOnly Cookie としてセットする。ロールに応じて `user` または `admin`
+        を付与する。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: your-password
+              required:
+                - password
+      responses:
+        "200":
+          description: ログイン成功。clf_access / clf_refresh Cookie をセット。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  role:
+                    $ref: "#/components/schemas/SessionRole"
+                required:
+                  - ok
+                  - role
+        "401":
+          description: パスワード不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/logout:
+    post:
+      tags:
+        - auth
+      summary: ログアウト
+      description: Cookie（clf_access・clf_refresh）を削除してトップページへリダイレクト。
+      responses:
+        "303":
+          description: ログアウト成功。/ へリダイレクト。
+  /api/auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Access Token リフレッシュ
+      description: clf_refresh Cookie を検証し、新しい Access Token（clf_access）を発行する。Access
+        Token の有効期限（15 分）が切れた場合に呼び出す。
+      responses:
+        "200":
+          description: リフレッシュ成功。新しい clf_access Cookie をセット。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                  - ok
+        "401":
+          description: Refresh Token 無効
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/lockers:
+    get:
+      tags:
+        - lockers
+      summary: ロッカー一覧取得
+      description: 登録済みのコインロッカーを新着順で全件返す。認証不要。
+      responses:
+        "200":
+          description: ロッカー一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Locker"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - lockers
+      summary: ロッカー作成
+      description: 新しいコインロッカーを登録する。user または admin 認証必須。
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LockerInput"
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Locker"
+        "400":
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/lockers/{id}:
+    get:
+      tags:
+        - lockers
+      summary: ロッカー詳細取得
+      description: 指定した ID のロッカーと紐づく写真一覧を返す。認証不要。
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: ロッカー詳細（写真付き）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockerWithPhotos"
+        "404":
+          description: ロッカーが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags:
+        - lockers
+      summary: ロッカー更新
+      description: 指定した ID のロッカー情報を更新する。user または admin 認証必須。
+      security:
+        - cookieAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LockerInput"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Locker"
+        "400":
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - lockers
+      summary: ロッカー削除
+      description: 指定した ID のロッカーと紐づく写真（Storage + DB）を全て削除する。admin ロール必須。
+      security:
+        - cookieAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "204":
+          description: 削除成功（レスポンスボディなし）
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: 権限不足（admin ロールが必要）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/photos:
+    post:
+      tags:
+        - photos
+      summary: 写真アップロード
+      description: 写真を Supabase Storage にアップロードし、locker_photos テーブルに記録する。jpg / png /
+        gif / webp / heic 等、最大 10MB。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 画像ファイル（最大 10MB）
+                locker_id:
+                  type: string
+                  format: uuid
+                  description: 紐づけるロッカーの UUID
+                order_index:
+                  type: integer
+                  default: 0
+                  description: 表示順（昇順）
+              required:
+                - file
+                - locker_id
+      responses:
+        "201":
+          description: アップロード成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockerPhoto"
+        "400":
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/geocode:
+    get:
+      tags:
+        - geocode
+      summary: 住所・会場名検索
+      description: Photon（OpenStreetMap）経由で会場名・住所を検索し緯度経度を返す。日本国内のみ、最大 5 件。認証不要。
+      parameters:
+        - schema:
+            type: string
+            description: 検索クエリ
+            example: 東京駅
+          required: true
+          description: 検索クエリ
+          name: q
+          in: query
+      responses:
+        "200":
+          description: 検索結果（最大 5 件）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeocodeResult"
+        "400":
+          description: クエリパラメータ q が未指定
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: 上流の Photon API エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/search-history:
+    get:
+      tags:
+        - search-history
+      summary: 検索履歴一覧取得
+      description: セッション Cookie（clf_search_session）に紐づく検索履歴を新着順で返す。Cookie
+        がない場合は空配列を返し、新しいセッション Cookie を発行する。
+      responses:
+        "200":
+          description: 検索履歴一覧（最大 10 件）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchHistory"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - search-history
+      summary: 検索履歴を追加・更新
+      description: 検索クエリを履歴に追加する。同一セッション × 同一クエリの場合は searched_at を更新する（upsert）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: 検索クエリ
+                  example: 東京駅
+                lat:
+                  type:
+                    - number
+                    - "null"
+                  example: 35.6812
+                lng:
+                  type:
+                    - number
+                    - "null"
+                  example: 139.7671
+                display_name:
+                  type:
+                    - string
+                    - "null"
+                  example: 東京駅, 東京
+              required:
+                - query
+      responses:
+        "200":
+          description: 追加・更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchHistory"
+        "400":
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/search-history/{id}:
+    delete:
+      tags:
+        - search-history
+      summary: 検索履歴を削除
+      description: 指定した ID の検索履歴を削除する。セッション Cookie が一致するレコードのみ削除可能。
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "204":
+          description: 削除成功（レスポンスボディなし）
+        "401":
+          description: セッション Cookie なし
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/admin/reset:
+    delete:
+      tags:
+        - admin
+      summary: 全データリセット
+      description: 全ロッカー・写真（Storage + DB）・検索履歴を削除する。admin ロール必須。この操作は取り消せない。
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: リセット成功（レスポンスボディなし）
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: 権限不足（admin ロールが必要）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+webhooks: {}

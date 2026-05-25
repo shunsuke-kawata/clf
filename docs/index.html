@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLF ドキュメント</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    h1 { font-size: 1.8rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.5rem; }
+    .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 3rem; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 640px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .card:hover { border-color: #38bdf8; background: #1e3a5f33; }
+    .card-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .card-title { font-size: 1.05rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.4rem; }
+    .card-desc { font-size: 0.82rem; color: #94a3b8; line-height: 1.6; }
+    .badge {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: #0f3460;
+      color: #38bdf8;
+    }
+    footer { margin-top: 3rem; color: #334155; font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+  <h1>CLF ドキュメント</h1>
+  <p class="subtitle">Coin Locker Finder — 開発者向けリファレンス</p>
+
+  <div class="cards">
+    <a class="card" href="swagger.html">
+      <div class="card-icon">📋</div>
+      <div class="card-title">API仕様書</div>
+      <div class="card-desc">
+        全エンドポイントのリクエスト・レスポンス仕様を Swagger UI で確認できます。
+      </div>
+      <span class="badge">OpenAPI 3.1</span>
+    </a>
+
+    <a class="card" href="auth.html">
+      <div class="card-icon">🔐</div>
+      <div class="card-title">JWT認証の仕組み</div>
+      <div class="card-desc">
+        HS256 署名・Access / Refresh Token の2トークン戦略・セキュリティ対策をコードフローで解説します。
+      </div>
+      <span class="badge">HS256 / httpOnly Cookie</span>
+    </a>
+  </div>
+
+  <footer>
+    <a href="https://github.com/shunsuke-kawata/clf" style="color:#475569;text-decoration:none;">
+      github.com/shunsuke-kawata/clf
+    </a>
+  </footer>
+</body>
+</html>
