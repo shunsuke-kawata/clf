@@ -12,6 +12,7 @@ import {
   Trash2,
   LogOut,
   HelpCircle,
+  History,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -157,6 +158,20 @@ function SectionContent({ id }: { id: HelpSectionId }) {
           </div>
           <div>
             <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <History className="h-4 w-4" />
+              検索履歴から再検索する
+            </div>
+            <Steps
+              steps={[
+                "検索バーをタップしてフォーカスすると、過去の検索履歴が最大10件表示されます",
+                "履歴をタップすると、その場所に地図が移動します",
+                "履歴右端の「×」をタップすると、その履歴を個別に削除できます",
+              ]}
+              note="検索履歴はブラウザのセッションに紐づいて保存されます"
+            />
+          </div>
+          <div>
+            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
               <Navigation className="h-4 w-4" />
               現在地に移動する
             </div>
@@ -178,7 +193,7 @@ function SectionContent({ id }: { id: HelpSectionId }) {
               steps={[
                 "画面右下のロッカーアイコンのボタンをタップします",
                 "施設検索後は検索地点から、それ以外は現在地から近い順にリストが表示されます（3km圏内のみ）",
-                "「ナビ」ボタンをタップするとGoogleマップで経路案内が起動します",
+                "「ナビ」ボタンをタップするとGoogleマップで経路案内が起動します（出発地は施設検索後は検索地点、それ以外は現在地）",
                 "ロッカー名をタップすると地図上で場所が表示されます",
               ]}
               note="施設検索後は「〇〇 付近のロッカー」と表示されます。現在地基準に戻すには青いボタン（コンパスマーク）をタップしてください"

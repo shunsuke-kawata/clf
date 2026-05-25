@@ -185,6 +185,11 @@ npx localtunnel --port 3000
 - 新しい操作フローが生まれる変更（例: 新機能の追加）→ 既存セクションに追記、またはセクション自体を追加する
 - `HELP_SECTIONS` 配列を変更した場合は `HelpSidebar` の目次も自動的に追従するため追加作業は不要
 
+**APIルートまたはOpenAPIスキーマを追加・変更した場合は、`pnpm generate:swagger` を実行して `docs/swagger.yaml` を更新する。**
+
+- 対象: `src/app/api/` 配下のルートハンドラ、`src/lib/openapi/` 配下のスキーマ・パス定義
+- 実行後は生成された `docs/swagger.yaml` を一緒にコミットする
+
 **純粋なロジックを含む実装には必ずテストを追加する。**
 
 | 対象                                | テストの要否                                           |
