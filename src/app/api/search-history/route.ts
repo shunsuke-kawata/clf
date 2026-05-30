@@ -7,6 +7,7 @@ import {
   createSearchSession,
   searchSessionCookieOptions,
 } from "@/features/search-history/lib/session";
+import { withHeaders, NO_STORE_HEADERS } from "@/lib/api-headers";
 
 export async function GET(req: NextRequest) {
   const { sessionId, isNew } = readSessionFromRequest(req);
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
     const { cookieValue, sessionId: newId } = createSearchSession();
     logger.debug("[search-history] issuing new session", { sessionId: newId });
     res.cookies.set(APP_CONFIG.searchHistory.cookieName, cookieValue, searchSessionCookieOptions());
-    return res;
+    return withHeaders(res, NO_STORE_HEADERS);
   }
 
   logger.debug("[search-history] list: querying DB", { sessionId });
@@ -29,11 +30,11 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     logger.error("[search-history] list failed", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: error.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.debug("[search-history] list ok", { count: data?.length ?? 0 });
-  return NextResponse.json(data);
+  return withHeaders(NextResponse.json(data), NO_STORE_HEADERS);
 }
 
 export async function POST(req: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   const display_name = typeof body?.display_name === "string" ? body.display_name.trim() : null;
   if (!query) {
     logger.warn("[search-history] upsert: missing query");
-    return NextResponse.json({ error: "query is required" }, { status: 400 });
+    return withHeaders(NextResponse.json({ error: "query is required" }, { status: 400 }), NO_STORE_HEADERS);
   }
 
   let { sessionId, isNew } = readSessionFromRequest(req);
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     logger.error("[search-history] upsert failed", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: error.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.info("[search-history] upserted", { id: data.id });
@@ -77,5 +78,5 @@ export async function POST(req: NextRequest) {
   if (newCookieValue) {
     res.cookies.set(APP_CONFIG.searchHistory.cookieName, newCookieValue, searchSessionCookieOptions());
   }
-  return res;
+  return withHeaders(res, NO_STORE_HEADERS);
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { APP_CONFIG } from "@/lib/config";
+import { withHeaders, NO_STORE_HEADERS } from "@/lib/api-headers";
 
 type PhotonFeature = {
   geometry: { coordinates: [number, number] };
@@ -33,7 +34,7 @@ function normalize(feature: PhotonFeature): { lat: string; lon: string; display_
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q");
   if (!q) {
-    return NextResponse.json({ error: "q is required" }, { status: 400 });
+    return withHeaders(NextResponse.json({ error: "q is required" }, { status: 400 }), NO_STORE_HEADERS);
   }
 
   const url = new URL(APP_CONFIG.geocode.url);
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
 
   if (!res.ok) {
     logger.error("[geocode] upstream failed", { q, status: res.status });
-    return NextResponse.json({ error: "Geocoding failed" }, { status: 502 });
+    return withHeaders(NextResponse.json({ error: "Geocoding failed" }, { status: 502 }), NO_STORE_HEADERS);
   }
 
   const data: PhotonResponse = await res.json();
@@ -55,5 +56,8 @@ export async function GET(req: NextRequest) {
   const japan = data.features.filter((f) => f.properties.countrycode === "JP");
   logger.debug("[geocode] filtered to JP", { hits: japan.length });
   logger.info("[geocode] ok", { q, hits: japan.length });
-  return NextResponse.json(japan.slice(0, APP_CONFIG.geocode.resultLimit).map(normalize));
+  return withHeaders(
+    NextResponse.json(japan.slice(0, APP_CONFIG.geocode.resultLimit).map(normalize)),
+    NO_STORE_HEADERS
+  );
 }

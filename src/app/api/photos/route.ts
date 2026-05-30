@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { randomUUID } from "crypto";
 import { APP_CONFIG } from "@/lib/config";
+import { withHeaders, NO_STORE_HEADERS } from "@/lib/api-headers";
 
 const BUCKET = APP_CONFIG.photo.bucket;
 
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   logger.debug("[photos] request received");
   const formData = await req.formData().catch(() => null);
   if (!formData) {
-    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+    return withHeaders(NextResponse.json({ error: "Invalid form data" }, { status: 400 }), NO_STORE_HEADERS);
   }
 
   const file = formData.get("file");
@@ -28,7 +29,10 @@ export async function POST(req: NextRequest) {
   const orderIndex = Number(formData.get("order_index") ?? 0);
 
   if (!(file instanceof File) || typeof lockerId !== "string" || !lockerId) {
-    return NextResponse.json({ error: "file and locker_id are required" }, { status: 400 });
+    return withHeaders(
+      NextResponse.json({ error: "file and locker_id are required" }, { status: 400 }),
+      NO_STORE_HEADERS
+    );
   }
 
   const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -55,14 +59,17 @@ export async function POST(req: NextRequest) {
         logger.debug("[photos] retry upload after bucket creation", { ok: !retry.error });
       } catch (e) {
         logger.error("[photos] bucket creation failed", e);
-        return NextResponse.json({ error: "Storage bucket setup failed" }, { status: 500 });
+        return withHeaders(
+          NextResponse.json({ error: "Storage bucket setup failed" }, { status: 500 }),
+          NO_STORE_HEADERS
+        );
       }
     }
   }
 
   if (uploadError) {
     logger.error("[photos] upload error", uploadError);
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: uploadError.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.debug("[photos] storage upload ok, inserting to DB", { storageKey });
@@ -74,10 +81,10 @@ export async function POST(req: NextRequest) {
 
   if (dbError) {
     logger.error("[photos] db error", dbError);
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: dbError.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.debug("[photos] DB insert ok", { id: data.id });
   logger.info("[photos] uploaded", { id: data.id, lockerId, storageKey });
-  return NextResponse.json(data, { status: 201 });
+  return withHeaders(NextResponse.json(data, { status: 201 }), NO_STORE_HEADERS);
 }

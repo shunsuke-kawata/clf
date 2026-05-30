@@ -76,6 +76,9 @@ describe("GET /api/search-history", () => {
     const res = await GET(makeRequest("GET"));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(history);
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
   });
 
   it("Supabaseエラーは500を返す", async () => {
