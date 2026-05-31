@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, type ReactNode } from "react";
+import { Component, useEffect, type ReactNode } from "react";
 import type { Locker } from "@/features/locker/schemas/locker";
+import { logger } from "@/lib/logger";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
@@ -43,6 +44,15 @@ type Props = {
 };
 
 export function MapViewClient({ lockers, supabaseUrl, flyTo }: Props) {
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    // dynamic import完了前に許可ダイアログを表示させる（timeoutなしでユーザーの応答を待つ）
+    navigator.geolocation.getCurrentPosition(
+      () => {},
+      (err) => logger.warn("[MapViewClient] geolocation permission denied", err)
+    );
+  }, []);
+
   return (
     <MapErrorBoundary>
       <MapView lockers={lockers} supabaseUrl={supabaseUrl} flyTo={flyTo} />
