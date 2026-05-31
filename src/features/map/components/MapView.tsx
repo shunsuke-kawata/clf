@@ -16,6 +16,9 @@ import { NearbySheet } from "./NearbySheet";
 import { VenueSearchBar } from "./VenueSearchBar";
 import { MapClickHandler } from "./MapClickHandler";
 import { SearchResultMarker } from "./SearchResultMarker";
+import { StackedLockerMarker } from "./StackedLockerMarker";
+import { LockerSelectSheet } from "./LockerSelectSheet";
+import { groupLockersByCoord, type LockerGroup } from "@/features/map/lib/groupLockersByCoord";
 
 function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
@@ -239,7 +242,10 @@ type SearchPin = { lat: number; lng: number; name: string };
 export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Props) {
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
   const [selectedLockerId, setSelectedLockerId] = useState<string | null>(null);
+  const [selectedLockerGroup, setSelectedLockerGroup] = useState<LockerGroup | null>(null);
   const [nearbyOpen, setNearbyOpen] = useState(false);
+
+  const lockerGroups = useMemo(() => groupLockersByCoord(lockers), [lockers]);
   const [nearbyOriginName, setNearbyOriginName] = useState<string | undefined>(undefined);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [flyToLocker, setFlyToLocker] = useState<{ lat: number; lng: number } | null>(null);
@@ -295,15 +301,33 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {flyTo && <FlyToHandler lat={flyTo.lat} lng={flyTo.lng} />}
         {flyToLocker && <FlyToHandler lat={flyToLocker.lat} lng={flyToLocker.lng} />}
-        {lockers.map((locker) => (
-          <LockerMarker key={locker.id} locker={locker} onSelect={setSelectedLockerId} />
-        ))}
+        {lockerGroups.map((group) =>
+          group.lockers.length === 1 ? (
+            <LockerMarker
+              key={group.lockers[0].id}
+              locker={group.lockers[0]}
+              onSelect={setSelectedLockerId}
+            />
+          ) : (
+            <StackedLockerMarker
+              key={`${group.lat},${group.lng}`}
+              group={group}
+              onSelect={setSelectedLockerGroup}
+            />
+          )
+        )}
         {searchPin && <SearchResultMarker {...searchPin} />}
       </MapContainer>
       <LockerBottomSheet
         lockerId={selectedLockerId}
         supabaseUrl={supabaseUrl}
         onClose={() => setSelectedLockerId(null)}
+      />
+      <LockerSelectSheet
+        group={selectedLockerGroup}
+        supabaseUrl={supabaseUrl}
+        onClose={() => setSelectedLockerGroup(null)}
+        onSelectLocker={setSelectedLockerId}
       />
       <NearbySheet
         open={nearbyOpen}
