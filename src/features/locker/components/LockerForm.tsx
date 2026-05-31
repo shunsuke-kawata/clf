@@ -14,6 +14,7 @@ import { logger } from "@/lib/logger";
 import { API_ROUTES, PAGE_ROUTES } from "@/lib/routes";
 import { APP_CONFIG } from "@/lib/config";
 import { usePreventIOSZoom } from "@/hooks/usePreventIOSZoom";
+import { requestGeolocation } from "@/lib/utils/geolocation";
 
 const MapPicker = dynamic(() => import("@/features/map/components/MapPicker"), {
   ssr: false,
@@ -104,19 +105,14 @@ export function LockerForm({ defaultValues, lockerId, mode }: Props) {
       return;
     }
 
-    try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: APP_CONFIG.map.geolocationTimeout,
-        })
-      );
+    const pos = await requestGeolocation();
+    if (pos) {
       const { latitude, longitude } = pos.coords;
       setValue("lat", latitude, { shouldValidate: true });
       setValue("lng", longitude, { shouldValidate: true });
       setFlyTarget({ lat: latitude, lng: longitude });
       setGeoState("ok");
-    } catch (e) {
-      logger.warn("[LockerForm] geolocation failed", e);
+    } else {
       setGeoError("現在地を取得できませんでした。位置情報の許可を確認してください。");
       setGeoState("error");
     }
