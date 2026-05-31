@@ -7,6 +7,7 @@ import { X, Clock } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { API_ROUTES } from "@/lib/routes";
 import { APP_CONFIG } from "@/lib/config";
+import { requestGeolocation } from "@/lib/utils/geolocation";
 
 type SearchResult = {
   lat: string;
@@ -28,13 +29,6 @@ type Props = {
   onClear?: () => void;
 };
 
-function getCurrentPosition(): Promise<GeolocationPosition> {
-  return new Promise((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      timeout: APP_CONFIG.map.geolocationTimeout,
-    })
-  );
-}
 
 export function VenueSearchBar({ onResult, onClear }: Props) {
   const map = useMap();
@@ -171,8 +165,8 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
     }
 
     // 複数ヒット時: 現在地から最も近い結果へジャンプ
-    try {
-      const pos = await getCurrentPosition();
+    const pos = await requestGeolocation();
+    if (pos) {
       const { latitude: uLat, longitude: uLng } = pos.coords;
       const nearest = results.reduce((best, r) => {
         const d = (parseFloat(r.lat) - uLat) ** 2 + (parseFloat(r.lon) - uLng) ** 2;
@@ -180,7 +174,7 @@ export function VenueSearchBar({ onResult, onClear }: Props) {
         return d < bd ? r : best;
       });
       commit(nearest);
-    } catch {
+    } else {
       commit(results[0]);
     }
   }

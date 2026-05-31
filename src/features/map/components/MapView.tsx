@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -18,6 +18,7 @@ import { MapClickHandler } from "./MapClickHandler";
 import { SearchResultMarker } from "./SearchResultMarker";
 import { StackedLockerMarker } from "./StackedLockerMarker";
 import { LockerSelectSheet } from "./LockerSelectSheet";
+import { requestGeolocation } from "@/lib/utils/geolocation";
 import { groupLockersByCoord, type LockerGroup } from "@/features/map/lib/groupLockersByCoord";
 
 function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
@@ -31,9 +32,11 @@ function FlyToHandler({ lat, lng }: { lat: number; lng: number }) {
 function CurrentLocationButton({
   currentPosition,
   onClear,
+  onPositionGranted,
 }: {
   currentPosition: UserLocation | null;
   onClear?: () => void;
+  onPositionGranted: (lat: number, lng: number) => void;
 }) {
   const map = useMap();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,20 +62,12 @@ function CurrentLocationButton({
       flyToIfNeeded(currentPosition.lat, currentPosition.lng);
       return;
     }
-    if (!navigator.geolocation) {
-      logger.warn("[CurrentLocationButton] geolocation not supported");
-      return;
-    }
     setLoading(true);
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: APP_CONFIG.map.geolocationTimeout,
-        })
-      );
+      const pos = await requestGeolocation();
+      if (!pos) return;
+      onPositionGranted(pos.coords.latitude, pos.coords.longitude);
       flyToIfNeeded(pos.coords.latitude, pos.coords.longitude);
-    } catch (e) {
-      logger.warn("[CurrentLocationButton] geolocation failed", e);
     } finally {
       setLoading(false);
     }
@@ -139,10 +134,12 @@ function NearbyButton({
   onOpen,
   currentPosition,
   searchPin,
+  onPositionGranted,
 }: {
   onOpen: (loc: UserLocation, originName?: string) => void;
   currentPosition: UserLocation | null;
   searchPin: SearchPin | null;
+  onPositionGranted: (lat: number, lng: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -154,7 +151,6 @@ function NearbyButton({
   }, []);
 
   async function handleClick() {
-    // 施設検索済みの場合は検索地点を基準にする
     if (searchPin) {
       onOpen({ lat: searchPin.lat, lng: searchPin.lng }, searchPin.name);
       return;
@@ -163,20 +159,12 @@ function NearbyButton({
       onOpen(currentPosition);
       return;
     }
-    if (!navigator.geolocation) {
-      logger.warn("[NearbyButton] geolocation not supported");
-      return;
-    }
     setLoading(true);
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: APP_CONFIG.map.geolocationTimeout,
-        })
-      );
+      const pos = await requestGeolocation();
+      if (!pos) return;
+      onPositionGranted(pos.coords.latitude, pos.coords.longitude);
       onOpen({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    } catch (e) {
-      logger.warn("[NearbyButton] geolocation failed", e);
     } finally {
       setLoading(false);
     }
@@ -250,16 +238,29 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [flyToLocker, setFlyToLocker] = useState<{ lat: number; lng: number } | null>(null);
   const [currentPosition, setCurrentPosition] = useState<UserLocation | null>(null);
+  const watchingRef = useRef(false);
+  const watchIdRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    const watchId = navigator.geolocation.watchPosition(
+  const startWatching = useCallback(() => {
+    if (watchingRef.current || !navigator.geolocation) return;
+    watchingRef.current = true;
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => setCurrentPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => logger.warn("[MapView] watchPosition failed", err),
       { timeout: APP_CONFIG.map.geolocationTimeout }
     );
-    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+    };
+  }, []);
+
+  function handlePositionGranted(lat: number, lng: number) {
+    setCurrentPosition({ lat, lng });
+    startWatching();
+  }
 
   return (
     <>
@@ -281,10 +282,12 @@ export default function MapView({ lockers, supabaseUrl, onMapClick, flyTo }: Pro
         <CurrentLocationButton
           currentPosition={currentPosition}
           onClear={() => setSearchPin(null)}
+          onPositionGranted={handlePositionGranted}
         />
         <NearbyButton
           currentPosition={currentPosition}
           searchPin={searchPin}
+          onPositionGranted={handlePositionGranted}
           onOpen={(loc, originName) => {
             setUserLocation(loc);
             setNearbyOriginName(originName);
