@@ -53,6 +53,9 @@ describe("GET /api/lockers", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(mockLockers);
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
   });
 
   it("Supabase がエラーを返した場合は 500 を返す", async () => {
@@ -91,6 +94,8 @@ describe("POST /api/lockers", () => {
     const res = await POST(makeRequest({ lat: 35.0, lng: 135.0, pricing: [300] }));
     expect(res.status).toBe(201);
     expect((await res.json()).id).toBe("uuid-new");
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
   it("lat が欠けている場合は 400 を返す", async () => {

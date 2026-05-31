@@ -3,16 +3,17 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { getSessionRole } from "@/features/auth/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { withHeaders, NO_STORE_HEADERS } from "@/lib/api-headers";
 
 export async function DELETE(req: NextRequest) {
   const role = await getSessionRole(req);
   if (!role) {
     logger.warn("[admin/reset] unauthorized");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), NO_STORE_HEADERS);
   }
   if (role !== "admin") {
     logger.warn("[admin/reset] forbidden (not admin)");
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), NO_STORE_HEADERS);
   }
 
   logger.debug("[admin/reset] fetching all photo storage keys");
@@ -38,7 +39,7 @@ export async function DELETE(req: NextRequest) {
 
   if (lockersError) {
     logger.error("[admin/reset] DB reset failed", lockersError);
-    return NextResponse.json({ error: lockersError.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: lockersError.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.info("[admin/reset] lockers deleted", { count: deletedCount });
@@ -52,5 +53,5 @@ export async function DELETE(req: NextRequest) {
     logger.warn("[admin/reset] search_history reset failed", historyError);
   }
 
-  return new NextResponse(null, { status: 204 });
+  return withHeaders(new NextResponse(null, { status: 204 }), NO_STORE_HEADERS);
 }

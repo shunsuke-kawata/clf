@@ -4,6 +4,7 @@ import { lockerSchema } from "@/features/locker/schemas/locker";
 import { getSessionRole } from "@/features/auth/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { withHeaders, NO_STORE_HEADERS } from "@/lib/api-headers";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,19 +24,19 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const status = error.code === "PGRST116" ? 404 : 500;
     if (status === 500) logger.error("[lockers] get failed", { id, error });
     else logger.debug("[lockers] not found", { id });
-    return NextResponse.json({ error: error.message }, { status });
+    return withHeaders(NextResponse.json({ error: error.message }, { status }), NO_STORE_HEADERS);
   }
 
   logger.debug("[lockers] get: DB returned", { id, photoCount: data.locker_photos?.length ?? 0 });
   logger.info("[lockers] get ok", { id });
-  return NextResponse.json(data);
+  return withHeaders(NextResponse.json(data), NO_STORE_HEADERS);
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const role = await getSessionRole(req);
   if (!role) {
     logger.warn("[lockers] update: unauthorized");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), NO_STORE_HEADERS);
   }
 
   const { id } = await params;
@@ -45,7 +46,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   if (!parsed.success) {
     logger.warn("[lockers] update validation failed", { id, error: parsed.error.flatten() });
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return withHeaders(NextResponse.json({ error: parsed.error.flatten() }, { status: 400 }), NO_STORE_HEADERS);
   }
 
   logger.debug("[lockers] update: validation ok, updating DB", { id });
@@ -58,23 +59,23 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   if (error) {
     logger.error("[lockers] update failed", { id, error });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: error.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.debug("[lockers] update: DB update ok", { id });
   logger.info("[lockers] updated", { id });
-  return NextResponse.json(data);
+  return withHeaders(NextResponse.json(data), NO_STORE_HEADERS);
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
   const role = await getSessionRole(req);
   if (!role) {
     logger.warn("[lockers] delete: unauthorized");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), NO_STORE_HEADERS);
   }
   if (role !== "admin") {
     logger.warn("[lockers] delete: forbidden (not admin)");
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), NO_STORE_HEADERS);
   }
 
   const { id } = await params;
@@ -102,9 +103,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   if (error) {
     logger.error("[lockers] delete failed", { id, error });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return withHeaders(NextResponse.json({ error: error.message }, { status: 500 }), NO_STORE_HEADERS);
   }
 
   logger.info("[lockers] deleted", { id });
-  return new NextResponse(null, { status: 204 });
+  return withHeaders(new NextResponse(null, { status: 204 }), NO_STORE_HEADERS);
 }
