@@ -3,13 +3,29 @@ import { getSession } from "@/features/auth/lib/auth";
 import { PAGE_ROUTES } from "@/lib/routes";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
-export default async function LoginPage() {
+function isSafeRedirectPath(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("://")
+  );
+}
+
+type Props = {
+  searchParams: Promise<{ redirectTo?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: Props) {
   const role = await getSession();
-  if (role) redirect(PAGE_ROUTES.home);
+  const { redirectTo } = await searchParams;
+  const safeRedirectTo = isSafeRedirectPath(redirectTo) ? redirectTo : undefined;
+
+  if (role) redirect(safeRedirectTo ?? PAGE_ROUTES.home);
 
   return (
     <main className="flex min-h-dvh items-center justify-center p-6">
-      <LoginForm />
+      <LoginForm redirectTo={safeRedirectTo} />
     </main>
   );
 }
