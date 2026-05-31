@@ -8,14 +8,16 @@ import { PAGE_ROUTES } from "@/lib/routes";
 
 type Props = {
   variant?: "user" | "admin";
+  redirectTo?: string;
 };
 
-export function LoginForm({ variant = "user" }: Props) {
+export function LoginForm({ variant = "user", redirectTo }: Props) {
   const [state, action, pending] = useActionState(loginAction.bind(null, variant), null);
   const isAdmin = variant === "admin";
 
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
+      {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       <h1 className="text-center text-xl font-semibold">
         {isAdmin ? "管理者ログイン" : "ログイン"}
       </h1>
