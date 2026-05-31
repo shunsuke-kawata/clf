@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { getLockerById } from "@/features/locker/data/lockers";
 import { LockerDetail } from "@/features/locker/components/LockerDetail";
+import { PAGE_ROUTES } from "@/lib/routes";
 import { serverEnv } from "@/lib/env";
 
 type Props = { params: Promise<{ id: string }> };
@@ -24,7 +25,7 @@ export default async function LockerDetailPage({ params }: Props) {
         </Link>
         <h1 className="truncate text-base font-semibold">コインロッカー詳細</h1>
         <Link
-          href={`/admin/${locker.id}/edit`}
+          href={PAGE_ROUTES.lockerEdit(locker.id)}
           className="text-muted-foreground hover:text-foreground hover:bg-accent -mr-2 ml-auto flex h-11 w-11 items-center justify-center rounded-full transition-colors"
           aria-label="編集"
         >

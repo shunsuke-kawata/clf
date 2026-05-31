@@ -51,6 +51,9 @@ describe("DELETE /api/search-history/[id]", () => {
     mockReadSession.mockReturnValueOnce({ sessionId: MOCK_SESSION_ID, isNew: false });
     const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: "uuid-1" }) });
     expect(res.status).toBe(204);
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
   });
 
   it("Supabaseエラーは500を返す", async () => {

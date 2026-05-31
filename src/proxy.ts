@@ -34,7 +34,11 @@ export async function proxy(req: NextRequest) {
   const isWriteApi =
     (pathname.startsWith("/api/lockers") || pathname.startsWith("/api/photos")) &&
     ["POST", "PUT", "DELETE"].includes(req.method);
-  const isProtected = pathname.startsWith("/admin") || isWriteApi;
+  const isProtectedPage =
+    pathname.startsWith("/admin") ||
+    pathname === "/new" ||
+    /^\/lockers\/[^/]+\/edit$/.test(pathname);
+  const isProtected = isProtectedPage || isWriteApi;
 
   if (!isProtected) return NextResponse.next();
 
@@ -59,12 +63,14 @@ export async function proxy(req: NextRequest) {
   }
 
   // 両トークンとも無効
-  if (pathname.startsWith("/admin")) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (isWriteApi) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const loginUrl = new URL("/login", req.url);
+  loginUrl.searchParams.set("redirectTo", pathname);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/lockers/:path*", "/api/photos/:path*"],
+  matcher: ["/admin/:path*", "/new", "/lockers/:id/edit", "/api/lockers/:path*", "/api/photos/:path*"],
 };

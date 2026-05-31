@@ -12,7 +12,7 @@
 ## Phase 2 — 認証
 
 - [ ] `lib/auth.ts`（Cookie署名・検証・パスワード照合）
-- [ ] `middleware.ts`（`/admin/*` と書き込み系APIを保護）
+- [ ] `proxy.ts`（`/admin/*` と書き込み系APIを保護）
 - [ ] `POST /api/auth/login`・`POST /api/auth/logout`
 - [ ] `/login` ページ（パスワード入力画面）
 

@@ -43,3 +43,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# gh-pages 生成ファイル（deploy-docs ワークフローが生成・デプロイするためローカルでは不要）
+/index.html
+/auth.html
+/swagger.html
+/swagger.yaml

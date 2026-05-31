@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { serverEnv } from "@/lib/env";
 import { APP_CONFIG } from "@/lib/config";
 import { ACCESS_COOKIE, REFRESH_COOKIE, type SessionRole } from "@/features/auth/lib/auth";
+import { withHeaders, NO_STORE_HEADERS } from "@/lib/api-headers";
 
 export async function POST(req: NextRequest) {
   logger.debug("[auth/refresh] request received");
@@ -18,7 +19,10 @@ export async function POST(req: NextRequest) {
     logger.debug("[auth/refresh] refresh token verified", { role });
   } catch (e) {
     logger.warn("[auth/refresh] invalid refresh token", e);
-    return NextResponse.json({ error: "Invalid refresh token" }, { status: 401 });
+    return withHeaders(
+      NextResponse.json({ error: "Invalid refresh token" }, { status: 401 }),
+      NO_STORE_HEADERS
+    );
   }
 
   const newAccessToken = await new SignJWT({ role })
@@ -38,5 +42,5 @@ export async function POST(req: NextRequest) {
     maxAge: APP_CONFIG.auth.accessMaxAge,
     path: "/",
   });
-  return res;
+  return withHeaders(res, NO_STORE_HEADERS);
 }
